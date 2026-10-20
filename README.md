@@ -1,4 +1,4 @@
-# 動物雷達模組 (Animal Radar)
+# Animal Radar
 
 > **專為 Transport Fever 3 (TF3) 打造的全地圖動物偵測雷達與鏡頭聚焦系統**  
 > **Mod ID**: `aliangliang_animal_radar`  

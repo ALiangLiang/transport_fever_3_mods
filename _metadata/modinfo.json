@@ -1,0 +1,28 @@
+{
+  "name": "動物雷達",
+  "summary": "在遊戲中提供動物雷達視窗，按物種分頁檢視全地圖動物並一鍵跳轉鏡頭觀察",
+  "description": "在遊戲中新增專屬動物雷達視窗，即時掃描地圖上的動物，並按照物種分頁分類整理。\n\n功能特色：\n1. 專屬工具列按鈕：在主工具列點擊「動物雷達」即可快速開啟或關閉雷達視窗。\n2. 物種分頁標籤：自動按地圖上的動物種類（如鹿、棕熊、狐狸、狼、鶴群、魚群等）建立分頁標籤，輕鬆查看各物種數量與實體清單。\n3. 純粹簡約介面：無多餘冗雜數據，專注呈現物種分類與動物編號。\n4. 一鍵鏡頭跳轉：點擊列表中的「觀察聚焦」，鏡頭立即瞬移至該動物身旁。\n5. 鏡頭追蹤模式：支援「跟隨追蹤」與「靜態聚焦」兩種運作模式切換。\n6. 完整多語系支援：原生支援繁體中文、簡體中文與英文。",
+  "localization": {
+    "en": {
+      "name": "Animal Radar",
+      "summary": "In-game radar window to view all animals across the map grouped by species with instant camera tracking",
+      "description": "Adds a dedicated in-game radar window that scans all animals across the map, neatly organized into tabs by species.\n\nFeatures:\n1. Dedicated Toolbar Button: Click the 'Animal Radar' button on the main toolbar to toggle the window.\n2. Species Tab Navigation: Dynamic tabs grouped by species (Deer, Brown Bear, Fox, Wolf, Birds, Fish Schools, etc.) showing counts and entity lists.\n3. Clean Interface: Displays only what matters—species classification and entity ID, without visual clutter.\n4. Instant Camera Jump: Click 'Focus' on any entry to move your camera directly to the animal.\n5. Flexible Camera Mode: Switch between 'Follow & Track' or 'Focus Only' modes.\n6. Full i18n Localization: Native support for English, Traditional Chinese, and Simplified Chinese."
+    },
+    "zh": {
+      "name": "動物雷達",
+      "summary": "在遊戲中提供動物雷達視窗，按物種分頁檢視全地圖動物並一鍵跳轉鏡頭觀察",
+      "description": "在遊戲中新增專屬動物雷達視窗，即時掃描地圖上的動物，並按照物種分頁分類整理。\n\n功能特色：\n1. 專屬工具列按鈕：在主工具列點擊「動物雷達」即可快速開啟或關閉雷達視窗。\n2. 物種分頁標籤：自動按地圖上的動物種類（如鹿、棕熊、狐狸、狼、鶴群、魚群等）建立分頁標籤，輕鬆查看各物種數量與實體清單。\n3. 純粹簡約介面：無多餘冗雜數據，專注呈現物種分類與動物編號。\n4. 一鍵鏡頭跳轉：點擊列表中的「觀察聚焦」，鏡頭立即瞬移至該動物身旁。\n5. 鏡頭追蹤模式：支援「跟隨追蹤」與「靜態聚焦」兩種運作模式切換。\n6. 完整多語系支援：原生支援繁體中文、簡體中文與英文。"
+    }
+  },
+  "authors": [
+    {
+      "name": "ALiangLiang",
+      "role": "CREATOR"
+    }
+  ],
+  "tags": [
+    "Script",
+    "Gameplay",
+    "UI"
+  ]
+}

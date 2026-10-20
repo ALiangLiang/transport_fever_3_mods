@@ -1,0 +1,10 @@
+{
+  "archives": null,
+  "files": [
+    "animal_finder_toolbar.res.lua",
+    "animal_finder.script.lua",
+    "animal_finder_sim.script.lua",
+    "animal_finder.lua",
+    "animal_finder.gs.lua"
+  ]
+}

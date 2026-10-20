@@ -1,0 +1,37 @@
+{
+  "modId": "aliangliang_animal_radar",
+  "revision": 1,
+  "severityAdd": "None",
+  "severityRemove": "None",
+  "visible": true,
+  "cosmetic": true,
+  "preRunScript": { "fileName": "" },
+  "runScript": { "fileName": "" },
+  "postRunScript": { "fileName": "" },
+  "params": [
+    {
+      "key": "paramFollowMode",
+      "name": "Camera Focus Mode",
+      "tooltip": "Camera behavior when clicking an animal: Focus & Follow or Focus Only.",
+      "uiType": "ComboBox",
+      "values": [
+        "Focus & Follow",
+        "Focus Only"
+      ],
+      "defaultIndex": 0
+    },
+    {
+      "key": "paramAutoRefresh",
+      "name": "Auto Refresh Interval",
+      "tooltip": "Scan frequency for animals when the radar window is open.",
+      "uiType": "ComboBox",
+      "values": [
+        "Manual Only",
+        "Every 1s",
+        "Every 2s",
+        "Every 5s"
+      ],
+      "defaultIndex": 2
+    }
+  ]
+}

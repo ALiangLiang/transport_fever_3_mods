@@ -23,12 +23,17 @@
     "REFRESH": "Refresh",
     "TOTAL_ITEMS": "%d vehicles",
     "TOOLTIP_UNCOLLECTED_STORE": "Connoisseur Achievement: Not yet used on any line",
-    "TOOLTIP_COLLECTED_STORE": "Connoisseur Achievement: Already used"
+    "TOOLTIP_COLLECTED_STORE": "Connoisseur Achievement: Already used",
+    "FILTER_CURRENT_ERA": "Current Era",
+    "FILTER_CURRENT_ERA_ON": "Current Era (%d)",
+    "FILTER_CURRENT_ERA_OFF": "Current Era (%d)",
+    "TOOLTIP_CURRENT_ERA_YEAR": "Only show vehicles available in current year (%d)",
+    "TOOLTIP_CURRENT_ERA_ALL": "Only show vehicles available in current era"
   },
   "zh_TW": {
-    "CONNOISSEUR_TRACKER": "鑑賞家助手",
+    "CONNOISSEUR_TRACKER": "鑑賞家追蹤器",
     "CONNOISSEUR_SHORT": "鑑賞家",
-    "TOOLTIP_OPEN_TRACKER": "鑑賞家助手\n追蹤所有運具使用進度，並在載具商店中標記未使用的運具",
+    "TOOLTIP_OPEN_TRACKER": "鑑賞家追蹤器\n追蹤所有運具使用進度，並在載具商店中標記未使用的運具",
     "PROGRESS_TITLE": "鑑賞家成就進度",
     "PROGRESS_FORMAT": "已鑑賞 %d / %d 種運具 (%s%%)",
     "ACHIEVEMENT_UNLOCKED": "成就已達成！所有運具皆已鑑賞完成。",
@@ -49,12 +54,17 @@
     "REFRESH": "重新整理",
     "TOTAL_ITEMS": "共 %d 種運具",
     "TOOLTIP_UNCOLLECTED_STORE": "鑑賞家成就：尚未在任何路線中使用過此運具",
-    "TOOLTIP_COLLECTED_STORE": "鑑賞家成就：已在路線中使用過"
+    "TOOLTIP_COLLECTED_STORE": "鑑賞家成就：已在路線中使用過",
+    "FILTER_CURRENT_ERA": "過濾當前年代",
+    "FILTER_CURRENT_ERA_ON": "當前年代 (%d)",
+    "FILTER_CURRENT_ERA_OFF": "過濾當前年代 (%d)",
+    "TOOLTIP_CURRENT_ERA_YEAR": "僅顯示當前遊戲年份（%d 年）可購買/使用的運具",
+    "TOOLTIP_CURRENT_ERA_ALL": "僅顯示當前遊戲年份可購買/使用的運具"
   },
   "zh_CN": {
-    "CONNOISSEUR_TRACKER": "鉴赏家助手",
+    "CONNOISSEUR_TRACKER": "鉴赏家追踪器",
     "CONNOISSEUR_SHORT": "鉴赏家",
-    "TOOLTIP_OPEN_TRACKER": "鉴赏家助手\n追踪所有运具使用进度，并在载具商店中标记未使用的运具",
+    "TOOLTIP_OPEN_TRACKER": "鉴赏家追踪器\n追踪所有运具使用进度，并在载具商店中标记未使用的运具",
     "PROGRESS_TITLE": "鉴赏家成就进度",
     "PROGRESS_FORMAT": "已鉴赏 %d / %d 种运具 (%s%%)",
     "ACHIEVEMENT_UNLOCKED": "成就已达成！所有运具皆已鉴赏完成。",
@@ -75,6 +85,11 @@
     "REFRESH": "重新整理",
     "TOTAL_ITEMS": "共 %d 种运具",
     "TOOLTIP_UNCOLLECTED_STORE": "鉴赏家成就：尚未在任何路线中使用过此运具",
-    "TOOLTIP_COLLECTED_STORE": "鉴赏家成就：已在路线中使用过"
+    "TOOLTIP_COLLECTED_STORE": "鉴赏家成就：已在路线中使用过",
+    "FILTER_CURRENT_ERA": "过滤当前年代",
+    "FILTER_CURRENT_ERA_ON": "当前年代 (%d)",
+    "FILTER_CURRENT_ERA_OFF": "过滤当前年代 (%d)",
+    "TOOLTIP_CURRENT_ERA_YEAR": "仅显示当前游戏年份（%d 年）可购买/使用的运具",
+    "TOOLTIP_CURRENT_ERA_ALL": "仅显示当前游戏年份可购买/使用的运具"
   }
 }

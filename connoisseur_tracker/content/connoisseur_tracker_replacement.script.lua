@@ -1,6 +1,6 @@
 -- ==============================================================================
 -- Connoisseur Tracker Vehicle Store Replacement & Hook
--- 鑑賞家助手 載具商店標記替換機制
+-- 鑑賞家追蹤器 載具商店標記替換機制
 -- ==============================================================================
 
 local react = ug_require and ug_require("::/gui/main/react.lua") or require("/gui/main/react.lua")

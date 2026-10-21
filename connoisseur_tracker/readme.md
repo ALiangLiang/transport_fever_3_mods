@@ -1,4 +1,4 @@
-# Connoisseur Tracker (鑑賞家助手)
+# Connoisseur Tracker (鑑賞家追蹤器)
 
 > **專為 Transport Fever 3 (TF3) 打造的「鑑賞家」（Connoisseur）全運具成就追蹤與載具商店標記模組**  
 > **Mod ID**: `aliangliang_connoisseur_tracker`  

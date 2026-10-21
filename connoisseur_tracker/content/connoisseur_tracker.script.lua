@@ -1,6 +1,6 @@
 -- ==============================================================================
 -- Connoisseur Tracker HUD Plugin, Window & Vehicle Store Hook
--- 鑑賞家助手 介面擴充與載具商店標記
+-- 鑑賞家追蹤器 介面擴充與載具商店標記
 -- ==============================================================================
 
 local react = ug_require and ug_require("::/gui/main/react.lua") or require("/gui/main/react.lua")
@@ -11,6 +11,11 @@ local game_react_globals = ug_require and ug_require("::/gui/main/game_react_glo
 local styleutil = nil
 pcall(function()
     styleutil = ug_require and ug_require("::/gui/main/styleutil.tl") or require("/gui/main/styleutil.tl")
+end)
+
+local lang_util = nil
+pcall(function()
+    lang_util = ug_require and ug_require("/scripts/lang_util.tl") or require("/scripts/lang_util.tl")
 end)
 
 local WINDOW_ID = "connoisseur_tracker_window"
@@ -50,248 +55,240 @@ local function _tr(key, default)
 end
 
 -- ==============================================================================
--- Vehicle Store Integration: Hook VehicleName, DetailsTitle, VehicleNameCell & VehicleStoreWindow
+-- Vehicle Store Integration: Hook VehicleName, DetailsTitle & VehicleNameCell
 -- ==============================================================================
 
 local hookedRecipeIds = {}
 
--- Scan _react.recipes for recipe names and IDs via closure upvalue inspection
-local function scanRecipeIds()
-    local nameToId = {}
-    if _react and _react.recipes and debug and debug.getupvalue then
-        for id, closure in pairs(_react.recipes) do
-            if type(closure) == "function" then
+local function getRecipeMaps()
+    local fnToId = nil
+    local fnToName = nil
+
+    if debug and debug.getupvalue then
+        if react and react.GetRecipeId then
+            local _, v = debug.getupvalue(react.GetRecipeId, 1)
+            if type(v) == "table" then fnToId = v end
+        end
+        if react and react.GetRecipeName then
+            local _, v = debug.getupvalue(react.GetRecipeName, 1)
+            if type(v) == "table" then fnToName = v end
+        end
+
+        if not fnToId or not fnToName then
+            local visited = {}
+            local function search(fn)
+                if not fn or type(fn) ~= "function" or visited[fn] then return end
+                visited[fn] = true
                 local i = 1
                 while true do
-                    local n, v = debug.getupvalue(closure, i)
+                    local n, v = debug.getupvalue(fn, i)
                     if not n then break end
-                    if n == "name" and type(v) == "string" then
-                        nameToId[v] = id
-                        break
+                    if type(v) == "table" then
+                        local firstK, firstV = next(v)
+                        if type(firstK) == "function" then
+                            if type(firstV) == "string" and not fnToName then
+                                fnToName = v
+                            elseif type(firstV) == "number" and not fnToId then
+                                fnToId = v
+                            end
+                        end
+                    elseif type(v) == "function" then
+                        search(v)
                     end
+                    if fnToId and fnToName then return end
                     i = i + 1
                 end
             end
-        end
-    end
-    return nameToId
-end
 
--- Tag all unused official vehicles in repId2elementStatic
-local function tagStaticVehicles(repId2elementStatic)
-    if not repId2elementStatic then return end
-    local c = getCore()
-    local usedMap = c and c.getUsedVehicleMap() or {}
-    local badge = _tr("BADGE_NOT_USED", "[未使用過]")
-
-    for repId, elemStatic in pairs(repId2elementStatic) do
-        local isUsed = true
-        if c then
-            isUsed = c.isStoreElementUsed(elemStatic, usedMap)
-        end
-        local origName = elemStatic.name or ""
-        if not isUsed then
-            if not origName:find(badge, 1, true) then
-                elemStatic.name = origName .. " " .. badge
+            for _, f in pairs({
+                react.CallOriginalRecipe,
+                react.GloballyReplaceRecipeBeforeInitInternal,
+                react.RegisterRecipe,
+                react.RegisterWrapperRecipe
+            }) do
+                search(f)
+                if fnToId and fnToName then break end
             end
-        else
-            elemStatic.name = origName:gsub("%s*%[未使用過%]", ""):gsub("%s*%[未鑑賞%]", ""):gsub("%s*%[Unused%]", ""):gsub("%s*%[Uncollected%]", "")
         end
     end
+
+    return fnToId, fnToName
 end
+
+local isStoreHooked = false
 
 local function ensureStoreHooks(replacementApi)
-    -- 1. Ensure target vehicle store modules are loaded
-    local vehicle_store_window = nil
+    if isStoreHooked then return true end
+
     pcall(function()
         if ug_require then
-            vehicle_store_window = ug_require("/gui/line_vehicle_mgmt/vehicle_store_window.tl")
+            ug_require("/gui/line_vehicle_mgmt/vehicle_store_window.tl")
             ug_require("/gui/line_vehicle_mgmt/vehicle_store_table.tl")
         else
-            vehicle_store_window = require("/gui/line_vehicle_mgmt/vehicle_store_window.tl")
+            require("/gui/line_vehicle_mgmt/vehicle_store_window.tl")
             require("/gui/line_vehicle_mgmt/vehicle_store_table.tl")
         end
     end)
 
-    -- 2. Wrap vehicle_store_window.VehicleStoreWindow via replacementApi if available
-    if vehicle_store_window and vehicle_store_window.VehicleStoreWindow and replacementApi and replacementApi.ReplaceRecipe then
-        pcall(function()
-            local ConnoisseurVehicleStoreWindow = react.RegisterWrapperRecipe("ConnoisseurVehicleStoreWindow", builtin.Window, function(params)
-                if params and params.vehiclesStaticData and params.vehiclesStaticData.repId2elementStatic then
-                    tagStaticVehicles(params.vehiclesStaticData.repId2elementStatic)
-                end
-                return react.CallOriginalRecipe(vehicle_store_window.VehicleStoreWindow, params)
-            end)
-            replacementApi.ReplaceRecipe(vehicle_store_window.VehicleStoreWindow, ConnoisseurVehicleStoreWindow)
-            print("[Connoisseur Tracker] Successfully replaced VehicleStoreWindow via replacementApi")
-        end)
-    end
-
-    -- 3. Dynamic scan of _react.recipes for targets
-    local nameToId = scanRecipeIds()
-    if not next(nameToId) then
+    local fnToId, fnToName = getRecipeMaps()
+    if not fnToId or not fnToName then
         return false
     end
 
-    -- Hook "VehicleName"
-    if nameToId["VehicleName"] and not hookedRecipeIds[nameToId["VehicleName"]] then
-        local id = nameToId["VehicleName"]
-        local origFn = _react.originalRecipeFn[id]
-        if origFn then
-            local VehicleNameReplacement = react.RegisterRecipe("ConnoisseurVehicleNameReplacement", function(param)
-                local c = getCore()
-                local isUsed = true
-                if c and param and param.elemStatic then
-                    isUsed = c.isStoreElementUsed(param.elemStatic)
-                end
-
-                if not isUsed and param and param.elemStatic then
-                    local badge = _tr("BADGE_NOT_USED", "[未使用過]")
-                    local origName = param.elemStatic.name or ""
-                    if not origName:find(badge, 1, true) then
-                        local modifiedStatic = {}
-                        for k, v in pairs(param.elemStatic) do modifiedStatic[k] = v end
-                        modifiedStatic.name = origName .. " " .. badge
-
-                        local modifiedParam = {}
-                        for k, v in pairs(param) do modifiedParam[k] = v end
-                        modifiedParam.elemStatic = modifiedStatic
-
-                        return origFn(modifiedParam)
-                    end
-                end
-
-                return origFn(param)
-            end)
-
-            if _react and _react.recipeReplace then
-                _react.recipeReplace[id] = VehicleNameReplacement
-            end
-            hookedRecipeIds[id] = true
-            print(string.format("[Connoisseur Tracker] Successfully hooked VehicleName (recipeId: %s)", tostring(id)))
+    local targets = {}
+    for fn, name in pairs(fnToName) do
+        if name == "VehicleName" or name == "DetailsTitle" or name == "VehicleNameCell" then
+            targets[name] = { fn = fn, id = fnToId[fn] }
         end
     end
 
-    -- Hook "DetailsTitle"
-    if nameToId["DetailsTitle"] and not hookedRecipeIds[nameToId["DetailsTitle"]] then
-        local id = nameToId["DetailsTitle"]
-        local origFn = _react.originalRecipeFn[id]
-        if origFn then
-            local DetailsTitleReplacement = react.RegisterRecipe("ConnoisseurDetailsTitleReplacement", function(elemStatic)
-                local c = getCore()
-                local isUsed = true
-                if c and elemStatic then
-                    isUsed = c.isStoreElementUsed(elemStatic)
-                end
+    local badge = _tr("BADGE_NOT_USED", "[未使用過]")
 
-                if not isUsed and elemStatic then
-                    local badge = _tr("BADGE_NOT_USED", "[未使用過]")
-                    local origName = elemStatic.name or ""
-                    if not origName:find(badge, 1, true) then
-                        local modifiedStatic = {}
-                        for k, v in pairs(elemStatic) do modifiedStatic[k] = v end
-                        modifiedStatic.name = origName .. " " .. badge
+    -- 1. Hook VehicleName (Left panel vehicle card in store)
+    if targets["VehicleName"] and not hookedRecipeIds[targets["VehicleName"].id] then
+        local t = targets["VehicleName"]
+        local origId = t.id
+        local origFn = t.fn
 
-                        return origFn(modifiedStatic)
-                    end
-                end
-
-                return origFn(elemStatic)
-            end)
-
-            if _react and _react.recipeReplace then
-                _react.recipeReplace[id] = DetailsTitleReplacement
+        local VehicleNameReplacement = react.RegisterRecipe("ConnoisseurVehicleNameReplacement", function(param)
+            local c = getCore()
+            local isUsed = true
+            if c and param and param.elemStatic then
+                isUsed = c.isStoreElementUsed(param.elemStatic)
             end
-            hookedRecipeIds[id] = true
-            print(string.format("[Connoisseur Tracker] Successfully hooked DetailsTitle (recipeId: %s)", tostring(id)))
+
+            if not isUsed and param and param.elemStatic then
+                local origName = param.elemStatic.name or ""
+                if not origName:find(badge, 1, true) then
+                    local modifiedStatic = {}
+                    for k, v in pairs(param.elemStatic) do modifiedStatic[k] = v end
+                    modifiedStatic.name = origName .. " " .. badge
+
+                    local modifiedParam = {}
+                    for k, v in pairs(param) do modifiedParam[k] = v end
+                    modifiedParam.elemStatic = modifiedStatic
+
+                    return react.CallOriginalRecipe(origFn, modifiedParam)
+                end
+            end
+
+            return react.CallOriginalRecipe(origFn, param)
+        end)
+
+        if replacementApi and replacementApi.ReplaceRecipe then
+            pcall(function() replacementApi.ReplaceRecipe(origFn, VehicleNameReplacement) end)
         end
+        if _react and _react.recipeReplace then
+            _react.recipeReplace[origId] = VehicleNameReplacement
+        end
+        hookedRecipeIds[origId] = true
+        print("[Connoisseur Tracker] Successfully hooked VehicleName")
     end
 
-    -- Hook "VehicleNameCell"
-    if nameToId["VehicleNameCell"] and not hookedRecipeIds[nameToId["VehicleNameCell"]] then
-        local id = nameToId["VehicleNameCell"]
-        local origFn = _react.originalRecipeFn[id]
-        if origFn then
-            local VehicleNameCellReplacement = react.RegisterRecipe("ConnoisseurVehicleNameCellReplacement", function(params)
-                local dataEntry = params and params.userParam
-                local elements = dataEntry and dataEntry.elements
-                local elem = elements and elements[params.rowKey]
+    -- 2. Hook DetailsTitle (Right details pane in store)
+    if targets["DetailsTitle"] and not hookedRecipeIds[targets["DetailsTitle"].id] then
+        local t = targets["DetailsTitle"]
+        local origId = t.id
+        local origFn = t.fn
 
-                local c = getCore()
-                local isUsed = true
-                if c and elem then
-                    isUsed = c.isStoreElementUsed(elem)
-                end
-
-                if not isUsed and elem and elem.static then
-                    local badge = _tr("BADGE_NOT_USED", "[未使用過]")
-                    local origName = elem.static.name or ""
-                    if not origName:find(badge, 1, true) then
-                        local modifiedStatic = {}
-                        for k, v in pairs(elem.static) do modifiedStatic[k] = v end
-                        modifiedStatic.name = origName .. " " .. badge
-
-                        local modifiedElem = {}
-                        for k, v in pairs(elem) do modifiedElem[k] = v end
-                        modifiedElem.static = modifiedStatic
-
-                        local modifiedElements = {}
-                        for k, v in pairs(elements) do modifiedElements[k] = v end
-                        modifiedElements[params.rowKey] = modifiedElem
-
-                        local modifiedDataEntry = {}
-                        for k, v in pairs(dataEntry) do modifiedDataEntry[k] = v end
-                        modifiedDataEntry.elements = modifiedElements
-
-                        local modifiedParams = {}
-                        for k, v in pairs(params) do modifiedParams[k] = v end
-                        modifiedParams.userParam = modifiedDataEntry
-
-                        return origFn(modifiedParams)
-                    end
-                end
-
-                return origFn(params)
-            end)
-
-            if _react and _react.recipeReplace then
-                _react.recipeReplace[id] = VehicleNameCellReplacement
+        local DetailsTitleReplacement = react.RegisterRecipe("ConnoisseurDetailsTitleReplacement", function(elemStatic)
+            local c = getCore()
+            local isUsed = true
+            if c and elemStatic then
+                isUsed = c.isStoreElementUsed(elemStatic)
             end
-            hookedRecipeIds[id] = true
-            print(string.format("[Connoisseur Tracker] Successfully hooked VehicleNameCell (recipeId: %s)", tostring(id)))
+
+            if not isUsed and elemStatic then
+                local origName = elemStatic.name or ""
+                if not origName:find(badge, 1, true) then
+                    local modifiedStatic = {}
+                    for k, v in pairs(elemStatic) do modifiedStatic[k] = v end
+                    modifiedStatic.name = origName .. " " .. badge
+
+                    return react.CallOriginalRecipe(origFn, modifiedStatic)
+                end
+            end
+
+            return react.CallOriginalRecipe(origFn, elemStatic)
+        end)
+
+        if replacementApi and replacementApi.ReplaceRecipe then
+            pcall(function() replacementApi.ReplaceRecipe(origFn, DetailsTitleReplacement) end)
         end
+        if _react and _react.recipeReplace then
+            _react.recipeReplace[origId] = DetailsTitleReplacement
+        end
+        hookedRecipeIds[origId] = true
+        print("[Connoisseur Tracker] Successfully hooked DetailsTitle")
     end
 
-    -- Hook "VehicleStoreWindow" directly in _react.recipeReplace
-    if nameToId["VehicleStoreWindow"] and not hookedRecipeIds[nameToId["VehicleStoreWindow"]] then
-        local id = nameToId["VehicleStoreWindow"]
-        local existingReplace = _react.recipeReplace and _react.recipeReplace[id]
-        local origFn = _react.originalRecipeFn[id]
-        local nextFn = existingReplace or origFn
+    -- 3. Hook VehicleNameCell (Table view cell in store)
+    if targets["VehicleNameCell"] and not hookedRecipeIds[targets["VehicleNameCell"].id] then
+        local t = targets["VehicleNameCell"]
+        local origId = t.id
+        local origFn = t.fn
 
-        if nextFn then
-            local ConnoisseurVehicleStoreWindowDynamic = react.RegisterWrapperRecipe("ConnoisseurVehicleStoreWindowDynamic", builtin.Window, function(params)
-                if params and params.vehiclesStaticData and params.vehiclesStaticData.repId2elementStatic then
-                    tagStaticVehicles(params.vehiclesStaticData.repId2elementStatic)
-                end
-                return nextFn(params)
-            end)
+        local VehicleNameCellReplacement = react.RegisterRecipe("ConnoisseurVehicleNameCellReplacement", function(params)
+            local dataEntry = params and params.userParam
+            local elements = dataEntry and dataEntry.elements
+            local elem = elements and elements[params.rowKey]
 
-            if _react and _react.recipeReplace then
-                _react.recipeReplace[id] = ConnoisseurVehicleStoreWindowDynamic
+            local c = getCore()
+            local isUsed = true
+            if c and elem then
+                isUsed = c.isStoreElementUsed(elem)
             end
-            hookedRecipeIds[id] = true
-            print(string.format("[Connoisseur Tracker] Successfully hooked VehicleStoreWindow via recipeReplace (recipeId: %s)", tostring(id)))
+
+            if not isUsed and elem and elem.static then
+                local origName = elem.static.name or ""
+                if not origName:find(badge, 1, true) then
+                    local modifiedStatic = {}
+                    for k, v in pairs(elem.static) do modifiedStatic[k] = v end
+                    modifiedStatic.name = origName .. " " .. badge
+
+                    local modifiedElem = {}
+                    for k, v in pairs(elem) do modifiedElem[k] = v end
+                    modifiedElem.static = modifiedStatic
+
+                    local modifiedElements = {}
+                    for k, v in pairs(elements) do modifiedElements[k] = v end
+                    modifiedElements[params.rowKey] = modifiedElem
+
+                    local modifiedDataEntry = {}
+                    for k, v in pairs(dataEntry) do modifiedDataEntry[k] = v end
+                    modifiedDataEntry.elements = modifiedElements
+
+                    local modifiedParams = {}
+                    for k, v in pairs(params) do modifiedParams[k] = v end
+                    modifiedParams.userParam = modifiedDataEntry
+
+                    return react.CallOriginalRecipe(origFn, modifiedParams)
+                end
+            end
+
+            return react.CallOriginalRecipe(origFn, params)
+        end)
+
+        if replacementApi and replacementApi.ReplaceRecipe then
+            pcall(function() replacementApi.ReplaceRecipe(origFn, VehicleNameCellReplacement) end)
         end
+        if _react and _react.recipeReplace then
+            _react.recipeReplace[origId] = VehicleNameCellReplacement
+        end
+        hookedRecipeIds[origId] = true
+        print("[Connoisseur Tracker] Successfully hooked VehicleNameCell")
+    end
+
+    if targets["VehicleName"] and targets["DetailsTitle"] and targets["VehicleNameCell"] then
+        isStoreHooked = true
+        print("[Connoisseur Tracker] All vehicle store recipes successfully hooked with name badges!")
     end
 
     return true
 end
 
--- Hook immediately on script load
-pcall(function() ensureStoreHooks() end)
-
-
+-- Attempt hook on initial script load
+pcall(ensureStoreHooks)
 
 -- ==============================================================================
 -- Window Management & State
@@ -315,7 +312,7 @@ local function closeWindow()
 end
 
 local function openWindow()
-    ensureStoreHooks()
+    pcall(ensureStoreHooks)
     local wa = game_react_globals and game_react_globals.getDefaultWindowApi and game_react_globals.getDefaultWindowApi()
     if wa == nil then
         return
@@ -370,11 +367,32 @@ local function makeExpandingSpacer()
     return builtin.Component{ meta = { class = "horizontal-spacer" } }
 end
 
+-- Safely retrieve current calendar year
+local function getCurrentYear()
+    local ok, yr = pcall(function()
+        if api and api.engine and api.engine.getComponent and api.engine.util and api.engine.util.getWorld and api.type and api.type.ComponentType and api.type.ComponentType.GAME_TIME then
+            local gameTime = api.engine.getComponent(api.engine.util.getWorld(), api.type.ComponentType.GAME_TIME)
+            if gameTime and gameTime.gameTime and api.engine.util.getCalendarDate then
+                local date = api.engine.util.getCalendarDate(gameTime.gameTime)
+                if date and date.year then
+                    return date.year
+                end
+            end
+        end
+        return nil
+    end)
+    if ok and yr then return yr end
+    return nil
+end
+
 local ConnoisseurTrackerContent = react.RegisterRecipe("ConnoisseurTrackerContent", function()
     local c = getCore()
     local refreshTick = react.useState(0)
     local tabState = react.useState("all")
     local unusedOnlyState = react.useState(true) -- Default to show unused vehicles first
+    local currentEraOnlyState = react.useState(false) -- Filter for current game era
+
+    local currentYear = getCurrentYear()
 
     local progressData = {
         vehicles = {},
@@ -426,6 +444,15 @@ local ConnoisseurTrackerContent = react.RegisterRecipe("ConnoisseurTrackerConten
     }
 
     -- 2. Filter Toolbar
+    local eraButtonText = _tr("FILTER_CURRENT_ERA", "過濾當前年代")
+    if currentYear then
+        if currentEraOnlyState:old() then
+            eraButtonText = string.format(_tr("FILTER_CURRENT_ERA_ON", "當前年代 (%d)"), currentYear)
+        else
+            eraButtonText = string.format(_tr("FILTER_CURRENT_ERA_OFF", "過濾當前年代 (%d)"), currentYear)
+        end
+    end
+
     local filterBar = builtin.BoxLayout{
         orientation = builtin.type.Orientation.Horizontal,
         children = {
@@ -443,7 +470,23 @@ local ConnoisseurTrackerContent = react.RegisterRecipe("ConnoisseurTrackerConten
                     unusedOnlyState:set(not unusedOnlyState:old())
                 end,
             },
-            makeHSpacer(10),
+            makeHSpacer(8),
+            builtin.Button{
+                meta = {
+                    class = currentEraOnlyState:old() and "primary" or "secondary",
+                    tooltip = currentYear
+                        and string.format(_tr("TOOLTIP_CURRENT_ERA_YEAR", "僅顯示當前遊戲年份（%d 年）可購買/使用的運具"), currentYear)
+                        or _tr("TOOLTIP_CURRENT_ERA_ALL", "僅顯示當前遊戲年份可購買/使用的運具"),
+                },
+                content = builtin.TextView{
+                    meta = { class = "font-scale-body" },
+                    text = eraButtonText,
+                },
+                onClick = function()
+                    currentEraOnlyState:set(not currentEraOnlyState:old())
+                end,
+            },
+            makeHSpacer(8),
             builtin.Button{
                 meta = { class = "secondary", tooltip = _tr("REFRESH", "重新整理") },
                 content = builtin.TextView{
@@ -465,12 +508,25 @@ local ConnoisseurTrackerContent = react.RegisterRecipe("ConnoisseurTrackerConten
     -- 3. Vehicle List Builder
     local function makeVehicleList(vehicles)
         local onlyUnused = unusedOnlyState:old()
+        local onlyCurrentEra = currentEraOnlyState:old()
         local rows = {}
 
         table.insert(rows, makeVSpacer(8))
 
         for _, v in ipairs(vehicles) do
-            if not onlyUnused or not v.isUsed then
+            local show = true
+            if onlyUnused and v.isUsed then
+                show = false
+            end
+            if show and onlyCurrentEra and currentYear then
+                local fromOk = (v.yearFrom == nil) or (v.yearFrom <= currentYear)
+                local toOk = (v.yearTo == nil) or (v.yearTo <= 0) or (v.yearTo >= currentYear)
+                if not (fromOk and toOk) then
+                    show = false
+                end
+            end
+
+            if show then
                 local yearStr = ""
                 if v.yearTo and v.yearTo > 0 then
                     yearStr = string.format(_tr("YEARS_RANGE", "%d 年 - %d 年"), v.yearFrom, v.yearTo)
@@ -479,9 +535,10 @@ local ConnoisseurTrackerContent = react.RegisterRecipe("ConnoisseurTrackerConten
                 end
 
                 local statusText = v.isUsed and _tr("STATUS_USED", "已鑑賞") or _tr("STATUS_NOT_USED", "未使用過")
-                local statusClass = v.isUsed and "font-scale-caption" or "font-scale-caption"
+                local statusClass = "font-scale-caption"
 
                 local itemRow = builtin.BoxLayout{
+                    meta = { class = "horizontal-spacer" },
                     orientation = builtin.type.Orientation.Horizontal,
                     children = {
                         makeHSpacer(16),
@@ -536,11 +593,25 @@ local ConnoisseurTrackerContent = react.RegisterRecipe("ConnoisseurTrackerConten
 
         table.insert(rows, makeVSpacer(8))
 
+        local scrollMeta = {
+            class = "horizontal-spacer",
+        }
+        if styleutil and styleutil.makeStyle then
+            pcall(function()
+                scrollMeta.styleSheet = styleutil.makeStyle{
+                    size = { -1, 330 },
+                }
+            end)
+        end
+
         return builtin.ScrollArea{
+            meta = scrollMeta,
             horizontalPolicy = builtin.type.ScrollBarPolicy.AlwaysOff,
             verticalPolicy = builtin.type.ScrollBarPolicy.AsNeeded,
             content = builtin.Component{
+                meta = { class = "horizontal-spacer" },
                 layout = builtin.BoxLayout{
+                    meta = { class = "horizontal-spacer" },
                     orientation = builtin.type.Orientation.Vertical,
                     children = rows,
                 },
@@ -572,9 +643,23 @@ local ConnoisseurTrackerContent = react.RegisterRecipe("ConnoisseurTrackerConten
 
     -- 5. Construct Native Tabs
     local function makeTabChild(key, label, vehicles)
-        local count = #vehicles
-        local unusedCount = 0
+        local onlyCurrentEra = currentEraOnlyState:old()
+        local matchingVehicles = {}
         for _, v in ipairs(vehicles) do
+            local eraOk = true
+            if onlyCurrentEra and currentYear then
+                local fromOk = (v.yearFrom == nil) or (v.yearFrom <= currentYear)
+                local toOk = (v.yearTo == nil) or (v.yearTo <= 0) or (v.yearTo >= currentYear)
+                eraOk = fromOk and toOk
+            end
+            if eraOk then
+                table.insert(matchingVehicles, v)
+            end
+        end
+
+        local count = #matchingVehicles
+        local unusedCount = 0
+        for _, v in ipairs(matchingVehicles) do
             if not v.isUsed then unusedCount = unusedCount + 1 end
         end
 
@@ -588,7 +673,9 @@ local ConnoisseurTrackerContent = react.RegisterRecipe("ConnoisseurTrackerConten
                 text = displayLabel,
             },
             item = builtin.Component{
+                meta = { class = "horizontal-spacer" },
                 layout = builtin.BoxLayout{
+                    meta = { class = "horizontal-spacer" },
                     orientation = builtin.type.Orientation.Vertical,
                     children = {
                         makeVSpacer(6),
@@ -623,7 +710,7 @@ local ConnoisseurTrackerContent = react.RegisterRecipe("ConnoisseurTrackerConten
     if styleutil and styleutil.makeStyle then
         pcall(function()
             local s = styleutil.makeStyle{
-                size = { 760, 480 },
+                size = { -1, 480 },
             }
             if s and api and api.type and api.type.Vec4f and api.type.Vec4f.new then
                 pcall(function()
@@ -638,6 +725,15 @@ local ConnoisseurTrackerContent = react.RegisterRecipe("ConnoisseurTrackerConten
         meta = boxMeta,
         orientation = builtin.type.Orientation.Vertical,
         children = {
+            builtin.Component{
+                meta = (function()
+                    if styleutil and styleutil.makeStyle then
+                        local ok, s = pcall(styleutil.makeStyle, { size = { 760, 0 } })
+                        if ok then return { styleSheet = s } end
+                    end
+                    return nil
+                end)(),
+            },
             makeVSpacer(12),
             header,
             makeVSpacer(10),
@@ -653,7 +749,7 @@ end)
 ConnoisseurTrackerWindow = react.RegisterWrapperRecipe("ConnoisseurTrackerWindow", builtin.Window, function(params)
     local winParams = {
         id = WINDOW_ID,
-        title = _tr("CONNOISSEUR_TRACKER", "鑑賞家助手"),
+        title = _tr("CONNOISSEUR_TRACKER", "鑑賞家追蹤器"),
         closable = true,
         movable = true,
         onClose = params.onClose,
@@ -694,7 +790,9 @@ local ConnoisseurTrackerHudPlugin = react.RegisterPluginRecipe(main_mod_button_a
 
     react.onStep(function()
         syncOpen()
-        pcall(function() ensureStoreHooks() end)
+        if not isStoreHooked then
+            pcall(ensureStoreHooks)
+        end
     end)
 
     if isMapEditorRef:get() then
@@ -704,7 +802,7 @@ local ConnoisseurTrackerHudPlugin = react.RegisterPluginRecipe(main_mod_button_a
     local btn = builtin.ToggleButton{
         meta = {
             class = "primary",
-            tooltip = _tr("TOOLTIP_OPEN_TRACKER", "鑑賞家助手\n追蹤所有運具使用進度，並在載具商店中標記未使用的運具"),
+            tooltip = _tr("TOOLTIP_OPEN_TRACKER", "鑑賞家追蹤器\n追蹤所有運具使用進度，並在載具商店中標記未使用的運具"),
         },
         content = builtin.BoxLayout{
             orientation = builtin.type.Orientation.Horizontal,

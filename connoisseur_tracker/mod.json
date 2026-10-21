@@ -8,28 +8,5 @@
   "preRunScript": { "fileName": "" },
   "runScript": { "fileName": "" },
   "postRunScript": { "fileName": "" },
-  "params": [
-    {
-      "key": "paramStoreBadge",
-      "name": "Store Badge Mode",
-      "tooltip": "Highlight uncollected vehicles in the vehicle purchase store.",
-      "uiType": "ComboBox",
-      "values": [
-        "Enabled",
-        "Disabled"
-      ],
-      "defaultIndex": 0
-    },
-    {
-      "key": "paramFilterDefault",
-      "name": "Default Filter Mode",
-      "tooltip": "Default vehicle filter mode when opening tracker window.",
-      "uiType": "ComboBox",
-      "values": [
-        "Show Unused Only",
-        "Show All"
-      ],
-      "defaultIndex": 0
-    }
-  ]
+  "params": []
 }

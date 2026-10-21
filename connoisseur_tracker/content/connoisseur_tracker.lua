@@ -147,6 +147,7 @@ function M.getProgressData()
             icon = v.icon,
             yearFrom = v.yearFrom,
             yearTo = v.yearTo,
+            carrier = v.carrier,
             category = v.category,
             isUsed = isUsed,
         })

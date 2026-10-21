@@ -1,16 +1,12 @@
 {
   "name": "UFO Summoner",
-  "summary": "在遊戲中提供 UFO 召喚與追蹤控制台，手動呼叫神秘外星飛碟並一鍵鏡頭追蹤，對於完成「第三類接觸」成就有幫助",
+  "summary": "Designed specifically for the 'Encounter of the 3rd Kind' achievement, this UFO Summoner provides instant camera tracking and summoning functionality.",
+  "description": "Designed specifically for the 'Encounter of the 3rd Kind' achievement, this UFO Summoner and tracking control panel.\n\nFeatures:\n1. Dedicated Toolbar Button: Click the 'UFO' button on the top-left main toolbar to open the control window.\n2. Manual UFO Summon: Trigger the official UFO easter egg on demand without waiting years.\n3. Real-time Status Tracker: Live detection of active UFOs, target cows, and current abduction flight phase.\n4. Instant Camera Jump: One-click camera tracking for both the UFO and the abducted cow.\n5. Great for 'Encounter of the 3rd Kind' Achievement: Easily trigger and observe the UFO event on demand, making it ideal for completing the 'Encounter of the 3rd Kind' achievement.",
   "localization": {
-    "en": {
-      "name": "UFO Summoner",
-      "summary": "In-game console to summon and track mysterious UFOs with instant camera tracking, helpful for the 'Encounter of the 3rd Kind' achievement",
-      "description": "Adds an in-game control panel that allows players to summon and track UFOs across the map.\n\nFeatures:\n1. Dedicated Toolbar Button: Click the 'UFO' button on the top-left main toolbar to open the control window.\n2. Manual UFO Summon: Trigger the official UFO easter egg on demand without waiting years.\n3. Real-time Status Tracker: Live detection of active UFOs, target cows, and current abduction flight phase.\n4. Instant Camera Jump: One-click camera tracking for both the UFO and the abducted cow.\n5. Great for 'Encounter of the 3rd Kind' Achievement: Easily trigger and observe the UFO event on demand, making it ideal for completing the 'Encounter of the 3rd Kind' achievement."
-    },
     "zh": {
       "name": "幽浮召喚器",
-      "summary": "在遊戲中提供 UFO 召喚與追蹤控制台，手動呼叫神秘外星飛碟並一鍵鏡頭追蹤，對於完成「第三類接觸」成就有幫助",
-      "description": "在遊戲中新增專屬 UFO 召喚控制面板，讓玩家隨時手動召喚神秘外星飛碟並即時追蹤。\n\n功能特色：\n1. 專屬工具列按鈕：點擊畫面左上角主工具列的「UFO」按鈕即可開啟控制視窗。\n2. 手動召喚飛碟：隨時一鍵觸發官方外星人抓牛彩蛋，無需等待數年隨機觸發。\n3. 即時狀態偵測：即時掌握空域中是否有活躍飛碟、鎖定牛隻與當前吸牛階段。\n4. 一鍵鏡頭追蹤：支援一鍵將鏡頭移動並跟隨幽浮或被抓牛隻，近距離觀賞光束牽引過程。\n5. 解鎖成就得力助手：隨時依需求召喚飛碟並鎖定觀看，對於完成「第三類接觸」成就非常有幫助。"
+      "summary": "專為「第三類接觸」成就設計的 UFO 召喚器，提供即時鏡頭追蹤與召喚功能",
+      "description": "專為「第三類接觸」成就設計的 UFO 召喚與追蹤控制面板。\n\n功能特色：\n1. 專屬工具列按鈕：點擊畫面左上角主工具列的「UFO」按鈕即可開啟控制視窗。\n2. 手動召喚飛碟：隨時一鍵觸發官方外星人抓牛彩蛋，無需等待數年隨機觸發。\n3. 即時狀態偵測：即時掌握空域中是否有活躍飛碟、鎖定牛隻與當前吸牛階段。\n4. 一鍵鏡頭追蹤：支援一鍵將鏡頭移動並跟隨幽浮或被抓牛隻，近距離觀賞光束牽引過程。\n5. 解鎖成就得力助手：隨時依需求召喚飛碟並鎖定觀看，對於完成「第三類接觸」成就非常有幫助。"
     }
   },
   "authors": [

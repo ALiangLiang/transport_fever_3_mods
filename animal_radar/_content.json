@@ -5,6 +5,7 @@
     "animal_finder.script.lua",
     "animal_finder_sim.script.lua",
     "animal_finder.lua",
-    "animal_finder.gs.lua"
+    "animal_finder.gs.lua",
+    "ui_util.lua"
   ]
 }

@@ -424,9 +424,34 @@ function M.getActiveUfos()
     return result
 end
 
+-- Get list of all livestock farms with cow pastures
+function M.getLivestockFarms()
+    local fields = findCowFields()
+    local result = {}
+    for i, entity in ipairs(fields) do
+        local transf = getEntityTransf(entity)
+        local pos = nil
+        if transf then
+            pos = transf:getTransl()
+        end
+        table.insert(result, {
+            entity = entity,
+            index = i,
+            pos = pos,
+        })
+    end
+    return result
+end
+
 -- Summon UFO
-function M.summonUfo(callback)
-    local cowPos, hasFarm = M.getTargetPosition()
+function M.summonUfo(callback, targetCowPos)
+    local cowPos, hasFarm
+    if targetCowPos then
+        cowPos = targetCowPos
+        hasFarm = true
+    else
+        cowPos, hasFarm = M.getTargetPosition()
+    end
 
     -- Immediately move camera to target location!
     M.focusPosition(cowPos, 25)

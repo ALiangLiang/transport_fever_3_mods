@@ -38,8 +38,27 @@ local function getCore()
     return core
 end
 
+-- Helper to safely load UI utility
+local ui = nil
+for _, path in ipairs({
+    "aliangliang_animal_radar::/ui_util.lua",
+    "/ui_util.lua",
+    "content.ui_util",
+    "ui_util.lua",
+}) do
+    local ok, res = pcall(function()
+        if ug_require then return ug_require(path) end
+        return require(path)
+    end)
+    if ok and res and type(res) == "table" and res.createWindowBox then
+        ui = res
+        break
+    end
+end
+
 -- Safe gettext translation helper querying TF3 strings.json
 local function _tr(key, default)
+    if ui and ui.tr then return ui.tr(key, default) end
     if _ and type(_) == "function" then
         local ok, res = pcall(_, key)
         if ok and res and res ~= key and #res > 0 then
@@ -47,6 +66,81 @@ local function _tr(key, default)
         end
     end
     return default or key
+end
+
+local function makeHSpacer(w)
+    if ui and ui.makeHSpacer then return ui.makeHSpacer(w) end
+    local meta = nil
+    if styleutil and styleutil.makeStyle then
+        pcall(function() meta = { styleSheet = styleutil.makeStyle{ size = { w, 1 } } } end)
+    end
+    return builtin.Component{ meta = meta }
+end
+
+local function makeVSpacer(h)
+    if ui and ui.makeVSpacer then return ui.makeVSpacer(h) end
+    local meta = nil
+    if styleutil and styleutil.makeStyle then
+        pcall(function() meta = { styleSheet = styleutil.makeStyle{ size = { 1, h } } } end)
+    end
+    return builtin.Component{ meta = meta }
+end
+
+local function makeExpandingSpacer()
+    if ui and ui.makeExpandingSpacer then return ui.makeExpandingSpacer() end
+    return builtin.Component{ meta = { class = "horizontal-spacer" } }
+end
+
+local function createScrollArea(rows, height)
+    if ui and ui.createScrollArea then return ui.createScrollArea(rows, height) end
+    local scrollMeta = { class = "horizontal-spacer" }
+    if styleutil and styleutil.makeStyle then
+        pcall(function() scrollMeta.styleSheet = styleutil.makeStyle{ size = { -1, height or 330 } } end)
+    end
+    return builtin.ScrollArea{
+        meta = scrollMeta,
+        horizontalPolicy = builtin.type.ScrollBarPolicy.AlwaysOff,
+        verticalPolicy = builtin.type.ScrollBarPolicy.AsNeeded,
+        content = builtin.Component{
+            meta = { class = "horizontal-spacer" },
+            layout = builtin.BoxLayout{
+                meta = { class = "horizontal-spacer" },
+                orientation = builtin.type.Orientation.Vertical,
+                children = rows,
+            },
+        },
+    }
+end
+
+local function createWindowBox(children, width, height)
+    if ui and ui.createWindowBox then return ui.createWindowBox(children, width, height) end
+    local boxMeta = nil
+    if styleutil and styleutil.makeStyle then
+        pcall(function()
+            local s = styleutil.makeStyle{ size = { -1, height or 480 } }
+            if s and api and api.type and api.type.Vec4f and api.type.Vec4f.new then
+                pcall(function() s.padding = api.type.Vec4f.new(12, 16, 12, 16) end)
+            end
+            boxMeta = { styleSheet = s }
+        end)
+    end
+    local allChildren = {
+        builtin.Component{
+            meta = (function()
+                if styleutil and styleutil.makeStyle then
+                    local ok, s = pcall(styleutil.makeStyle, { size = { width or 760, 0 } })
+                    if ok then return { styleSheet = s } end
+                end
+                return nil
+            end)(),
+        },
+    }
+    for _, ch in ipairs(children) do table.insert(allChildren, ch) end
+    return builtin.BoxLayout{
+        meta = boxMeta,
+        orientation = builtin.type.Orientation.Vertical,
+        children = allChildren,
+    }
 end
 
 -- ==============================================================================
@@ -123,12 +217,15 @@ local AnimalRadarContent = react.RegisterRecipe("AnimalRadarContent", function(p
 
     -- 1. Header Toolbar
     local header = builtin.BoxLayout{
+        meta = { class = "horizontal-spacer" },
         orientation = builtin.type.Orientation.Horizontal,
         children = {
+            makeHSpacer(16),
             builtin.TextView{
                 meta = { class = "font-scale-headline" },
                 text = string.format(_tr("MAP_TOTAL_ANIMALS", "地圖動物: %d 隻"), #allAnimals),
             },
+            makeExpandingSpacer(),
             builtin.Button{
                 meta = {
                     class = "secondary",
@@ -145,6 +242,7 @@ local AnimalRadarContent = react.RegisterRecipe("AnimalRadarContent", function(p
                     refreshTick:transform(function(v) return v + 1 end)
                 end,
             },
+            makeHSpacer(8),
             builtin.Button{
                 meta = {
                     class = followModeState:old() and "primary" or "secondary",
@@ -161,6 +259,7 @@ local AnimalRadarContent = react.RegisterRecipe("AnimalRadarContent", function(p
                     end
                 end,
             },
+            makeHSpacer(16),
         },
     }
 
@@ -168,21 +267,29 @@ local AnimalRadarContent = react.RegisterRecipe("AnimalRadarContent", function(p
     local function makeAnimalList(animals)
         if #animals == 0 then
             return builtin.BoxLayout{
-                orientation = builtin.type.Orientation.Vertical,
+                meta = { class = "horizontal-spacer" },
+                orientation = builtin.type.Orientation.Horizontal,
                 children = {
+                    makeHSpacer(16),
                     builtin.TextView{
                         meta = { class = "font-scale-headline" },
                         text = _tr("NO_ANIMALS_FOUND", "目前未偵測到此物種動物"),
                     },
+                    makeExpandingSpacer(),
+                    makeHSpacer(16),
                 },
             }
         end
 
         local rows = {}
+        table.insert(rows, makeVSpacer(6))
+
         for _, animal in ipairs(animals) do
             local itemRow = builtin.BoxLayout{
+                meta = { class = "horizontal-spacer" },
                 orientation = builtin.type.Orientation.Horizontal,
                 children = {
+                    makeHSpacer(16),
                     builtin.TextView{
                         meta = {
                             class = "font-scale-body",
@@ -196,6 +303,7 @@ local AnimalRadarContent = react.RegisterRecipe("AnimalRadarContent", function(p
                         },
                         text = string.format("%s  #%s", animal.species, tostring(animal.entity)),
                     },
+                    makeExpandingSpacer(),
                     builtin.Button{
                         meta = {
                             class = "primary",
@@ -211,21 +319,16 @@ local AnimalRadarContent = react.RegisterRecipe("AnimalRadarContent", function(p
                             end
                         end,
                     },
+                    makeHSpacer(16),
                 },
             }
             table.insert(rows, itemRow)
+            table.insert(rows, makeVSpacer(4))
         end
 
-        return builtin.ScrollArea{
-            horizontalPolicy = builtin.type.ScrollBarPolicy.AlwaysOff,
-            verticalPolicy = builtin.type.ScrollBarPolicy.AsNeeded,
-            content = builtin.Component{
-                layout = builtin.BoxLayout{
-                    orientation = builtin.type.Orientation.Vertical,
-                    children = rows,
-                },
-            },
-        }
+        table.insert(rows, makeVSpacer(6))
+
+        return createScrollArea(rows, 320)
     end
 
     -- 3. Construct Tabs per Species using TF3 native TabWidgetChild
@@ -239,6 +342,7 @@ local AnimalRadarContent = react.RegisterRecipe("AnimalRadarContent", function(p
             },
             item = builtin.Component{
                 layout = builtin.BoxLayout{
+                    meta = { class = "horizontal-spacer" },
                     orientation = builtin.type.Orientation.Vertical,
                     children = { makeAnimalList(animals) },
                 },
@@ -274,35 +378,28 @@ local AnimalRadarContent = react.RegisterRecipe("AnimalRadarContent", function(p
 
     -- 4. Footer Tip
     local footer = builtin.BoxLayout{
+        meta = { class = "horizontal-spacer" },
         orientation = builtin.type.Orientation.Horizontal,
         children = {
+            makeHSpacer(16),
             builtin.TextView{
                 meta = { class = "font-scale-annotation" },
                 text = _tr("FOOTER_TIP", "提示：點擊列表中的「觀察聚焦」，鏡頭將移動至該動物位置。"),
             },
+            makeExpandingSpacer(),
+            makeHSpacer(16),
         },
     }
 
-    local boxMeta = nil
-    if styleutil and styleutil.makeStyle then
-        pcall(function()
-            boxMeta = {
-                styleSheet = styleutil.makeStyle{
-                    size = { 760, 250 }, -- Shortened height by half (250px)
-                },
-            }
-        end)
-    end
-
-    return builtin.BoxLayout{
-        meta = boxMeta,
-        orientation = builtin.type.Orientation.Vertical,
-        children = {
-            header,
-            tabWidget,
-            footer,
-        },
-    }
+    return createWindowBox({
+        makeVSpacer(12),
+        header,
+        makeVSpacer(10),
+        tabWidget,
+        makeVSpacer(8),
+        footer,
+        makeVSpacer(10),
+    }, 760, 480)
 end)
 
 -- Window Wrapper Recipe

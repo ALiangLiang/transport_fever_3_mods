@@ -1,0 +1,10 @@
+{
+  "archives": null,
+  "files": [
+    "connoisseur_tracker_toolbar.res.lua",
+    "connoisseur_tracker_replacement.res.lua",
+    "connoisseur_tracker_replacement.script.lua",
+    "connoisseur_tracker.script.lua",
+    "connoisseur_tracker.lua"
+  ]
+}

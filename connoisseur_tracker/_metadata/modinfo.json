@@ -1,0 +1,27 @@
+{
+  "name": "Connoisseur Tracker",
+  "summary": "在遊戲中追蹤「鑑賞家」成就運具使用進度，並在載具商店中自動標記未使用過的運具",
+  "localization": {
+    "en": {
+      "name": "Connoisseur Tracker",
+      "summary": "Track vehicle usage progress for the 'Connoisseur' achievement and mark uncollected vehicles in the vehicle store",
+      "description": "Adds an in-game tracker and store integration designed specifically for the 'Connoisseur' achievement (use all vehicles in Free Game mode).\n\nFeatures:\n1. Dedicated Toolbar Button: Click the 'Connoisseur' button on the top-left main toolbar to open the vehicle tracker window.\n2. In-Store Vehicle Badges: Automatically adds an '[Unused]' mark to uncollected vehicles in all depot and station vehicle stores, so you immediately know which vehicles to purchase.\n3. Real-Time Progress: Live tracking of completed vs total official vehicles (e.g. 90 / 306) with percentage display directly connected to official achievement stats.\n4. Category Tabs: Neatly organized into Rail, Road, Tram, Water, and Aviation tabs with filters to toggle between 'Show All' and 'Unused Only'.\n5. Year of Availability: Displays introduction and retirement years for each vehicle, ensuring you never miss time-limited historical models."
+    },
+    "zh": {
+      "name": "鑑賞家助手",
+      "summary": "在遊戲中追蹤「鑑賞家」成就運具使用進度，並在載具商店中自動標記未使用過的運具",
+      "description": "專為《Transport Fever 3》官方「鑑賞家」（Connoisseur）成就量身打造的進度追蹤與載具商店標記模組。\n\n功能特色：\n1. 專屬工具列按鈕：點擊畫面左上角主工具列的「鑑賞家」按鈕即可隨時開啟進度雷達。\n2. 載具商店專屬標記：在各機廠、車庫與造船廠的購買載具列表中，自動為尚未使用的運具加上「[未使用過]」標籤，買車時一目了然。\n3. 即時統計數據：即時讀取全域成就進度（如：已鑑賞 90 / 306 種，29.4%），精確掌握成就達成率。\n4. 物種與運具分類：完整依鐵路、公路、路面電車、水運、航空分類分頁，並支援「過濾未使用過」切換。\n5. 年代提示：清楚標示每款運具的推出年代（如 1850 年 - 1925 年），避免錯過特定年代限定的復古運具。"
+    }
+  },
+  "authors": [
+    {
+      "name": "ALiangLiang",
+      "role": "CREATOR"
+    }
+  ],
+  "tags": [
+    "Script Mod",
+    "Misc"
+  ],
+  "url": ""
+}

@@ -1,6 +1,7 @@
 {
   "en": {
     "UFO_SUMMONER": "UFO Summoner",
+    "TOOLBAR_BTN_UFO": "UFO",
     "TOOLTIP_OPEN_UFO": "UFO Summoner\nSummon UFO and track abduction events",
     "STATUS_TITLE": "Airspace Radar Status",
     "STATUS_IDLE": "No active UFO in airspace",
@@ -11,7 +12,7 @@
     "TAB_COW_FARMS": "Livestock Farms",
     "NO_COWS_DETECTED": "Notice: No livestock farm with cattle found. Build a Livestock Farm to enable cattle abduction!",
     "COWS_DETECTED": "Livestock farm ready for abduction event",
-    "NO_ACTIVE_UFOS": "No active UFO currently in the sky. Click the button above to summon one!",
+    "NO_ACTIVE_UFOS": "No active UFO currently in the sky. Click 'Summon UFO' above to summon one!",
     "NO_FARMS_DETECTED": "No livestock farm detected on map. Build a Livestock Farm to choose target pastures!",
     "BTN_SUMMON": "Summon UFO",
     "TOOLTIP_SUMMON_BTN": "Immediately summon a mysterious UFO into the airspace",
@@ -32,13 +33,18 @@
     "COW_ENTITY": "Target Cow",
     "TARGET_COW_LABEL": "Target: Cow #%d",
     "NO_COW": "No target",
-    "UFO_ENTITY": "UFO Entity",
-    "SUMMON_SENDING": "Summon command sent! UFO is flying in...",
+    "UFO_ENTITY": "UFO",
+    "SUMMON_SENDING": "🛸 Summon command sent! UFO is flying in (ensure the game is not paused)...",
     "SUMMON_SUCCESS": "Summoned successfully! Camera focused on target cow.",
-    "FOOTER_TIP": "Tip: Summon UFOs to trigger cattle abduction. Note: You must click directly on the UFO entity in the game world to unlock the achievement!"
+    "NO_COW_FARMS_WARNING": "⚠️ Warning: No livestock farm with cattle found on the map! Official UFO requires cattle as target. If no UFO appears, please build a Livestock Farm first.",
+    "FOOTER_TIP": "Tip: Click 'Summon UFO' to initiate cow abduction. Reminder: You must click directly on the UFO entity in the game world to unlock the achievement!",
+    "UFO_SPAWNING": "UFO (Approaching...)",
+    "APPROACHING": "Approaching...",
+    "UFO Sightings": "UFO Sightings"
   },
   "zh_TW": {
     "UFO_SUMMONER": "幽浮召喚器",
+    "TOOLBAR_BTN_UFO": "幽浮",
     "TOOLTIP_OPEN_UFO": "幽浮召喚器\n手動召喚神秘外星飛碟與鏡頭追蹤",
     "STATUS_TITLE": "空域雷達狀態",
     "STATUS_IDLE": "目前空域中無活躍飛碟",
@@ -70,13 +76,18 @@
     "COW_ENTITY": "目標牛隻",
     "TARGET_COW_LABEL": "目標：牛隻 #%d",
     "NO_COW": "無目標",
-    "UFO_ENTITY": "飛碟編號",
-    "SUMMON_SENDING": "召喚指令已發送！飛碟正在高速進場...",
+    "UFO_ENTITY": "飛碟",
+    "SUMMON_SENDING": "🛸 召喚指令已發送！飛碟正在高速進場（請確保遊戲沒有暫停）...",
     "SUMMON_SUCCESS": "召喚成功！鏡頭已自動聚焦現場。",
-    "FOOTER_TIP": "提示：點擊「召喚飛碟」或「在此召喚」進場吸牛。提醒：必須在畫面上點擊幽浮本體才會觸發解鎖成就！"
+    "NO_COW_FARMS_WARNING": "⚠️ 警告：地圖上未找到養牛牧場！官方幽浮需要牧場中的牛群作為目標。若無飛碟出現，請先在地圖建造「牲畜農場」。",
+    "FOOTER_TIP": "提示：點擊「召喚飛碟」進場吸牛。提醒：必須在畫面上點擊幽浮本體才會觸發解鎖成就！",
+    "UFO_SPAWNING": "幽浮（即將進入空域...）",
+    "APPROACHING": "進場中...",
+    "UFO Sightings": "幽浮目擊"
   },
   "zh_CN": {
     "UFO_SUMMONER": "幽浮召唤器",
+    "TOOLBAR_BTN_UFO": "幽浮",
     "TOOLTIP_OPEN_UFO": "幽浮召唤器\n手动召唤神秘外星飞碟与镜头追踪",
     "STATUS_TITLE": "空域雷达状态",
     "STATUS_IDLE": "当前空域中无活跃飞碟",
@@ -108,9 +119,13 @@
     "COW_ENTITY": "目标牛只",
     "TARGET_COW_LABEL": "目标：牛只 #%d",
     "NO_COW": "无目标",
-    "UFO_ENTITY": "飞碟编号",
-    "SUMMON_SENDING": "召唤指令已发送！飞碟正在高速进场...",
+    "UFO_ENTITY": "飞碟",
+    "SUMMON_SENDING": "🛸 召唤指令已发送！飞碟正在高速进场（请确保游戏没有暂停）...",
     "SUMMON_SUCCESS": "召唤成功！镜头已自动聚焦现场。",
-    "FOOTER_TIP": "提示：点击「召唤飞碟」或「在此召唤」进场吸牛。提醒：必须在画面上点击幽浮本体才会触发解锁成就！"
+    "NO_COW_FARMS_WARNING": "⚠️ 警告：地图上未找到养牛牧场！官方幽浮需要牧场中的牛群作为目标。若无飞碟出现，请先在地图建造「牲畜农场」。",
+    "FOOTER_TIP": "提示：点击「召唤飞碟」进场吸牛。提醒：必须在画面上点击幽浮本体才会触发解锁成就！",
+    "UFO_SPAWNING": "幽浮（即将进入空域...）",
+    "APPROACHING": "进场中...",
+    "UFO Sightings": "幽浮目击"
   }
 }

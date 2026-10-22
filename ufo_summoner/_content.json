@@ -2,6 +2,10 @@
   "archives": null,
   "files": [
     "ufo_summoner_toolbar.res.lua",
+    "ufo_notification.res.lua",
+    "ufo_notification.script.lua",
+    "ufo_summoner.gs.lua",
+    "ufo_summoner_sim.script.lua",
     "ufo_summoner.script.lua",
     "ufo_summoner.lua",
     "ui_util.lua"

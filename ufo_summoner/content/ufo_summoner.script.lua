@@ -14,6 +14,8 @@ end)
 
 local WINDOW_ID = "ufo_summoner_window"
 
+local hasGameScriptActive = false
+
 -- Helper to safely load backend core
 local core = nil
 local function getCore()
@@ -28,7 +30,7 @@ local function getCore()
                 if ug_require then return ug_require(path) end
                 return require(path)
             end)
-            if ok and res and type(res) == "table" and res.summonUfo then
+            if ok and res and type(res) == "table" and (res.getLivestockFarms or res.getActiveUfos or res.summonUfo) then
                 core = res
                 break
             end
@@ -195,48 +197,106 @@ end
 
 local UfoSummonerContent = react.RegisterRecipe("UfoSummonerContent", function()
     local c = getCore()
-    local tabState = react.useState("ufos")
     local refreshTick = react.useState(0)
     local notificationState = react.useState("")
     local lastCheckTime = react.useRef(0)
 
-    -- Step physics & auto-refresh status every frame / interval
+    local pendingFocusRef = react.useRef(false)
+    local pendingFocusStartTime = react.useRef(0)
+    local lastPendingFocusCheck = react.useRef(0)
+
+    -- Auto-refresh status interval
     react.onStep(function()
-        if c and c.update then
-            c.update()
-        end
         local now = os.clock()
         if now - lastCheckTime:get() >= 0.5 then
             lastCheckTime:set(now)
             refreshTick:transform(function(v) return v + 1 end)
         end
+
+        if pendingFocusRef:get() then
+            if now - pendingFocusStartTime:get() > 8.0 then
+                pendingFocusRef:set(false)
+            elseif now - lastPendingFocusCheck:get() >= 0.3 then
+                lastPendingFocusCheck:set(now)
+                if c and c.getActiveUfos then
+                    local currentUfos = c.getActiveUfos() or {}
+                    for _, u in ipairs(currentUfos) do
+                        if u and u.ufoEntity and u.ufoEntity > 0 then
+                            pendingFocusRef:set(false)
+                            c.focusEntity(u.ufoEntity)
+                            break
+                        end
+                    end
+                end
+            end
+        end
     end)
 
     local activeUfos = {}
-    local farms = {}
     local hasFarms = false
     if c then
         activeUfos = c.getActiveUfos() or {}
-        farms = (c.getLivestockFarms and c.getLivestockFarms()) or {}
-        hasFarms = #farms > 0 or c.hasLivestockFarmsWithCows()
+        hasFarms = c.hasLivestockFarm and c.hasLivestockFarm()
     end
 
     local hasActiveUfo = #activeUfos > 0
 
+    -- Global in-game system notification helper
+    local function sendGlobalNotification(title, text, icon)
+        pcall(function()
+            if api and api.cmd and api.cmd.makeScriptingSendEventCmd then
+                api.cmd.sendCommand(api.cmd.makeScriptingSendEventCmd("", "Notifications", "add", {
+                    type = "aliangliang_ufo_summoner::/ufo_notification.script",
+                    params = {
+                        title = title,
+                        description = text,
+                        icon = icon or "::/game_mechanics/notifications/gui/icons/task_complete.tga",
+                    },
+                    autoDismissDuration = 7000,
+                }))
+            end
+        end)
+    end
+
+    -- Official Summon Trigger
+    local function doSummon()
+        if c and c.recordPendingSummon then
+            c.recordPendingSummon()
+        end
+        pendingFocusRef:set(true)
+        pendingFocusStartTime:set(os.clock())
+        -- NOTE: Pull camera strictly to the UFO in the air, NOT pasture or cow.
+
+        if not hasFarms then
+            local warnMsg = _tr("NO_COW_FARMS_WARNING", "⚠️ Warning: No livestock farm found on the map! Official UFO requires cattle as target. If no UFO appears, please build a Livestock Farm first.")
+            notificationState:set(warnMsg)
+            sendGlobalNotification(_tr("UFO_SUMMONER", "UFO Summoner"), warnMsg, "::/game_mechanics/notifications/gui/icons/animal_despawn.tga")
+        else
+            local succMsg = _tr("SUMMON_SENDING", "🛸 Summon command sent! UFO is flying in (ensure the game is not paused)...")
+            notificationState:set(succMsg)
+            sendGlobalNotification(_tr("UFO_SUMMONER", "UFO Summoner"), succMsg, "::/game_mechanics/notifications/gui/icons/task_complete.tga")
+        end
+
+        pcall(function()
+            api.cmd.sendCommand(api.cmd.makeScriptingSendEventCmd("", "UfoSummoner", "spawnUfo", {}))
+        end)
+        refreshTick:transform(function(v) return v + 1 end)
+    end
+
     -- 1. Header Toolbar
-    local statusText = hasActiveUfo and string.format(_tr("AIRSPACE_STATUS_ACTIVE", "空域狀態：%d 架活躍幽浮"), #activeUfos)
-                                   or _tr("AIRSPACE_STATUS_IDLE", "空域狀態：目前無活躍幽浮")
+    local statusText = hasActiveUfo and string.format(_tr("AIRSPACE_STATUS_ACTIVE", "Airspace: %d Active UFO(s)"), #activeUfos)
+                                   or _tr("AIRSPACE_STATUS_IDLE", "Airspace: No Active UFO")
 
     local farmNotice = nil
     if not hasFarms then
         farmNotice = builtin.TextView{
             meta = { class = "font-scale-caption" },
-            text = _tr("NO_COWS_DETECTED", "提醒：地圖上尚未發現養牛場。建造牲畜農場後飛碟即可吸牛！"),
+            text = _tr("NO_COWS_DETECTED", "Notice: No livestock farm found. Build a Livestock Farm to enable cattle abduction!"),
         }
     else
         farmNotice = builtin.TextView{
             meta = { class = "font-scale-caption" },
-            text = _tr("COWS_DETECTED", "地圖上的牲畜農場已就緒，可觸發外星光束吸牛彩蛋"),
+            text = _tr("COWS_DETECTED", "Livestock farm ready for abduction event"),
         }
     end
 
@@ -260,13 +320,16 @@ local UfoSummonerContent = react.RegisterRecipe("UfoSummonerContent", function()
             builtin.Button{
                 meta = {
                     class = "secondary",
-                    tooltip = _tr("REFRESH_TIP", "重新掃描活躍幽浮與牲畜農場"),
+                    tooltip = _tr("REFRESH_TIP", "Scan active UFOs in airspace"),
                 },
                 content = builtin.TextView{
                     meta = { class = "font-scale-body" },
-                    text = _tr("REFRESH", "重新整理"),
+                    text = _tr("REFRESH", "Refresh"),
                 },
                 onClick = function()
+                    if c and c.getActiveUfos then
+                        c.getActiveUfos(true)
+                    end
                     refreshTick:transform(function(v) return v + 1 end)
                 end,
             },
@@ -274,27 +337,14 @@ local UfoSummonerContent = react.RegisterRecipe("UfoSummonerContent", function()
             builtin.Button{
                 meta = {
                     class = "primary",
-                    tooltip = _tr("TOOLTIP_SUMMON_BTN", "立即手動召喚神秘幽浮進入空域"),
+                    tooltip = _tr("TOOLTIP_SUMMON_BTN", "Immediately summon a mysterious UFO into the airspace"),
                 },
                 content = builtin.TextView{
                     meta = { class = "font-scale-body" },
-                    text = _tr("BTN_SUMMON", "召喚飛碟"),
+                    text = _tr("BTN_SUMMON", "Summon UFO"),
                 },
                 onClick = function()
-                    if c then
-                        notificationState:set(_tr("SUMMON_SENDING", "召喚指令已發送！飛碟正在高速進場..."))
-                        c.summonUfo(function(ufoData)
-                            notificationState:set(_tr("SUMMON_SUCCESS", "召喚成功！鏡頭已自動聚焦現場。"))
-                            if ufoData then
-                                local entToFocus = ufoData.cowEntity or ufoData.ufoEntity
-                                if entToFocus then
-                                    c.focusEntity(entToFocus)
-                                end
-                            end
-                            refreshTick:transform(function(v) return v + 1 end)
-                        end)
-                        refreshTick:transform(function(v) return v + 1 end)
-                    end
+                    doSummon()
                 end,
             },
             makeHSpacer(16),
@@ -311,7 +361,7 @@ local UfoSummonerContent = react.RegisterRecipe("UfoSummonerContent", function()
                     makeHSpacer(16),
                     builtin.TextView{
                         meta = { class = "font-scale-body" },
-                        text = _tr("NO_ACTIVE_UFOS", "目前空中沒有活躍飛碟。點擊右上角「召喚飛碟」即可召喚！"),
+                        text = _tr("NO_ACTIVE_UFOS", "No active UFO currently in the sky. Click 'Summon UFO' above to summon one!"),
                     },
                     makeExpandingSpacer(),
                     makeHSpacer(16),
@@ -325,42 +375,54 @@ local UfoSummonerContent = react.RegisterRecipe("UfoSummonerContent", function()
         for _, ufo in ipairs(ufos) do
             local stateLabel = ufo.state or "Unknown"
             if stateLabel == "Approach" then
-                stateLabel = _tr("STATE_APPROACH", "正在高速進場")
+                stateLabel = _tr("STATE_APPROACH", "Approaching")
             elseif stateLabel == "Target" then
-                stateLabel = _tr("STATE_TARGET", "鎖定目標牛隻")
+                stateLabel = _tr("STATE_TARGET", "Targeting Cow")
             elseif stateLabel == "Abduct" then
-                stateLabel = _tr("STATE_ABDUCT", "光束牽引吸牛中！")
+                stateLabel = _tr("STATE_ABDUCT", "Abducting Cow!")
             elseif stateLabel == "Leave" then
-                stateLabel = _tr("STATE_LEAVE", "正在加速撤離")
+                stateLabel = _tr("STATE_LEAVE", "Leaving Airspace")
             elseif stateLabel == "Despawn" then
-                stateLabel = _tr("STATE_DESPAWN", "即將消失")
+                stateLabel = _tr("STATE_DESPAWN", "Despawning")
             end
 
-            local cowText = ufo.cowEntity and string.format(_tr("TARGET_COW_LABEL", "目標：牛隻 #%d"), ufo.cowEntity)
-                                          or _tr("NO_COW", "無目標")
+            local cowText = (ufo.cowEntity and ufo.cowEntity > 0)
+                and string.format(_tr("TARGET_COW_LABEL", "Target: Cow #%d"), ufo.cowEntity)
+                or _tr("NO_COW", "No target")
 
-            local actionButtons = {
-                builtin.Button{
-                    meta = { class = "secondary", tooltip = _tr("BTN_FOLLOW_UFO", "追蹤飛碟") },
+            local isRealUfo = (ufo.ufoEntity and ufo.ufoEntity > 0)
+            local ufoTitle = isRealUfo
+                and string.format("%s #%d", _tr("UFO_ENTITY", "UFO"), ufo.ufoEntity)
+                or string.format("🛸 %s", _tr("UFO_SPAWNING", "UFO (Approaching...)"))
+
+            local actionButtons = {}
+            if isRealUfo then
+                table.insert(actionButtons, builtin.Button{
+                    meta = { class = "secondary", tooltip = _tr("BTN_FOLLOW_UFO", "Follow UFO") },
                     content = builtin.TextView{
                         meta = { class = "font-scale-body" },
-                        text = _tr("BTN_FOLLOW_UFO", "追蹤飛碟"),
+                        text = _tr("BTN_FOLLOW_UFO", "Follow UFO"),
                     },
                     onClick = function()
                         if c and ufo.ufoEntity then
                             c.focusEntity(ufo.ufoEntity)
                         end
                     end,
-                },
-            }
+                })
+            else
+                table.insert(actionButtons, builtin.TextView{
+                    meta = { class = "font-scale-caption" },
+                    text = _tr("APPROACHING", "Approaching..."),
+                })
+            end
 
-            if ufo.cowEntity then
+            if ufo.cowEntity and ufo.cowEntity > 0 then
                 table.insert(actionButtons, makeHSpacer(8))
                 table.insert(actionButtons, builtin.Button{
-                    meta = { class = "secondary", tooltip = _tr("BTN_FOLLOW_COW", "追蹤牛隻") },
+                    meta = { class = "secondary", tooltip = _tr("BTN_FOLLOW_COW", "Follow Cow") },
                     content = builtin.TextView{
                         meta = { class = "font-scale-body" },
-                        text = _tr("BTN_FOLLOW_COW", "追蹤牛隻"),
+                        text = _tr("BTN_FOLLOW_COW", "Follow Cow"),
                     },
                     onClick = function()
                         if c and ufo.cowEntity then
@@ -380,13 +442,13 @@ local UfoSummonerContent = react.RegisterRecipe("UfoSummonerContent", function()
                             class = "font-scale-body",
                             styleSheet = (function()
                                 if styleutil and styleutil.makeStyle then
-                                    local ok, s = pcall(styleutil.makeStyle, { size = { 160, 28 } })
+                                    local ok, s = pcall(styleutil.makeStyle, { size = { 190, 28 } })
                                     if ok then return s end
                                 end
                                 return nil
                             end)(),
                         },
-                        text = string.format("%s #%d", _tr("UFO_ENTITY", "飛碟編號"), ufo.ufoEntity),
+                        text = ufoTitle,
                     },
                     builtin.TextView{
                         meta = {
@@ -399,7 +461,7 @@ local UfoSummonerContent = react.RegisterRecipe("UfoSummonerContent", function()
                                 return nil
                             end)(),
                         },
-                        text = string.format("%s: %s", _tr("STATE_LABEL", "當前階段"), stateLabel),
+                        text = string.format("%s: %s", _tr("STATE_LABEL", "Phase"), stateLabel),
                     },
                     builtin.TextView{
                         meta = {
@@ -430,157 +492,8 @@ local UfoSummonerContent = react.RegisterRecipe("UfoSummonerContent", function()
         return createScrollArea(rows, 320)
     end
 
-    -- 3. Build Scrollable List of Livestock Farms
-    local function makeFarmList(farmList)
-        if #farmList == 0 then
-            return builtin.BoxLayout{
-                meta = { class = "horizontal-spacer" },
-                orientation = builtin.type.Orientation.Horizontal,
-                children = {
-                    makeHSpacer(16),
-                    builtin.TextView{
-                        meta = { class = "font-scale-body" },
-                        text = _tr("NO_FARMS_DETECTED", "地圖上尚未發現養牛場。建造牲畜農場後可在此指定目標！"),
-                    },
-                    makeExpandingSpacer(),
-                    makeHSpacer(16),
-                },
-            }
-        end
-
-        local rows = {}
-        table.insert(rows, makeVSpacer(6))
-
-        for _, farm in ipairs(farmList) do
-            local coordStr = ""
-            if farm.pos then
-                coordStr = string.format(_tr("COORDINATES", "座標：(%.0f, %.0f)"), farm.pos.x, farm.pos.y)
-            end
-
-            local itemRow = builtin.BoxLayout{
-                meta = { class = "horizontal-spacer" },
-                orientation = builtin.type.Orientation.Horizontal,
-                children = {
-                    makeHSpacer(16),
-                    builtin.TextView{
-                        meta = {
-                            class = "font-scale-body",
-                            styleSheet = (function()
-                                if styleutil and styleutil.makeStyle then
-                                    local ok, s = pcall(styleutil.makeStyle, { size = { 220, 28 } })
-                                    if ok then return s end
-                                end
-                                return nil
-                            end)(),
-                        },
-                        text = string.format(_tr("FARM_NAME", "養牛牧場 #%d"), farm.entity),
-                    },
-                    builtin.TextView{
-                        meta = {
-                            class = "font-scale-caption",
-                            styleSheet = (function()
-                                if styleutil and styleutil.makeStyle then
-                                    local ok, s = pcall(styleutil.makeStyle, { size = { 200, 28 } })
-                                    if ok then return s end
-                                end
-                                return nil
-                            end)(),
-                        },
-                        text = coordStr,
-                    },
-                    makeExpandingSpacer(),
-                    builtin.Button{
-                        meta = {
-                            class = "primary",
-                            tooltip = _tr("TOOLTIP_SUMMON_BTN", "立即手動召喚神秘幽浮進入空域"),
-                        },
-                        content = builtin.TextView{
-                            meta = { class = "font-scale-body" },
-                            text = _tr("SUMMON_HERE", "在此召喚"),
-                        },
-                        onClick = function()
-                            if c then
-                                notificationState:set(_tr("SUMMON_SENDING", "召喚指令已發送！飛碟正在高速進場..."))
-                                c.summonUfo(function(ufoData)
-                                    notificationState:set(_tr("SUMMON_SUCCESS", "召喚成功！鏡頭已自動聚焦現場。"))
-                                    if ufoData then
-                                        local entToFocus = ufoData.cowEntity or ufoData.ufoEntity
-                                        if entToFocus then
-                                            c.focusEntity(entToFocus)
-                                        end
-                                    end
-                                    refreshTick:transform(function(v) return v + 1 end)
-                                end, farm.pos)
-                                refreshTick:transform(function(v) return v + 1 end)
-                            end
-                        end,
-                    },
-                    makeHSpacer(8),
-                    builtin.Button{
-                        meta = {
-                            class = "secondary",
-                            tooltip = _tr("FOCUS_FARM", "觀察農場"),
-                        },
-                        content = builtin.TextView{
-                            meta = { class = "font-scale-body" },
-                            text = _tr("FOCUS_FARM", "觀察農場"),
-                        },
-                        onClick = function()
-                            if c and farm.pos then
-                                c.focusPosition(farm.pos, 25)
-                            end
-                        end,
-                    },
-                    makeHSpacer(16),
-                },
-            }
-            table.insert(rows, itemRow)
-            table.insert(rows, makeVSpacer(4))
-        end
-
-        table.insert(rows, makeVSpacer(6))
-        return createScrollArea(rows, 320)
-    end
-
-    -- 4. Tab Construction
-    local function makeTabChild(key, label, contentWidget)
-        return builtin.TabWidgetChild{
-            localKey = "tab_" .. tostring(key),
-            value = key,
-            indicator = builtin.TextView{
-                meta = { class = "font-scale-tab-widget-indicator" },
-                text = label,
-            },
-            item = builtin.Component{
-                layout = builtin.BoxLayout{
-                    meta = { class = "horizontal-spacer" },
-                    orientation = builtin.type.Orientation.Vertical,
-                    children = { contentWidget },
-                },
-            },
-        }
-    end
-
-    local tabChildren = {
-        makeTabChild("ufos", string.format("%s (%d)", _tr("TAB_ACTIVE_UFOS", "活躍幽浮"), #activeUfos), makeUfoList(activeUfos)),
-        makeTabChild("farms", string.format("%s (%d)", _tr("TAB_COW_FARMS", "牲畜農場"), #farms), makeFarmList(farms)),
-    }
-
-    local tabWidget = builtin.TabWidget{
-        orientation = builtin.type.TabOrientation.North,
-        deselectAllowed = false,
-        indicatorsScrollable = false,
-        value = tabState:old() or "ufos",
-        onValueChange = function(newTab)
-            if newTab ~= nil then
-                tabState:set(newTab)
-            end
-        end,
-        tabs = tabChildren,
-    }
-
-    -- 5. Notification feedback area
-    local currentNotification = notificationState:old()
+    -- 3. Notification feedback area
+    local currentNotification = (notificationState.old and notificationState:old()) or (notificationState.get and notificationState:get()) or ""
     local notificationRow = nil
     if currentNotification and #currentNotification > 0 then
         notificationRow = builtin.BoxLayout{
@@ -600,7 +513,7 @@ local UfoSummonerContent = react.RegisterRecipe("UfoSummonerContent", function()
         notificationRow = makeVSpacer(0)
     end
 
-    -- 6. Footer Tip
+    -- 4. Footer Tip
     local footer = builtin.BoxLayout{
         meta = { class = "horizontal-spacer" },
         orientation = builtin.type.Orientation.Horizontal,
@@ -608,7 +521,7 @@ local UfoSummonerContent = react.RegisterRecipe("UfoSummonerContent", function()
             makeHSpacer(16),
             builtin.TextView{
                 meta = { class = "font-scale-annotation" },
-                text = _tr("FOOTER_TIP", "提示：點擊「召喚飛碟」或「在此召喚」進場吸牛。提醒：必須在畫面上點擊幽浮本體才會觸發解鎖成就！"),
+                text = _tr("FOOTER_TIP", "Tip: Click 'Summon UFO' to initiate cow abduction. Reminder: You must click directly on the UFO entity in the game world to unlock the achievement!"),
             },
             makeExpandingSpacer(),
             makeHSpacer(16),
@@ -619,20 +532,20 @@ local UfoSummonerContent = react.RegisterRecipe("UfoSummonerContent", function()
         makeVSpacer(12),
         header,
         makeVSpacer(10),
-        tabWidget,
+        makeUfoList(activeUfos),
         makeVSpacer(8),
         notificationRow,
         makeVSpacer(4),
         footer,
-        makeVSpacer(10),
-    }, 760, 480)
+        makeVSpacer(8),
+    }, 720, 420)
 end)
 
 -- Window Wrapper Recipe
 UfoSummonerWindow = react.RegisterWrapperRecipe("UfoSummonerWindow", builtin.Window, function(params)
     local winParams = {
         id = WINDOW_ID,
-        title = _tr("UFO_SUMMONER", "幽浮召喚器"),
+        title = _tr("UFO_SUMMONER", "UFO Summoner"),
         closable = true,
         movable = true,
         onClose = params.onClose,
@@ -673,10 +586,6 @@ local UfoSummonerHudPlugin = react.RegisterPluginRecipe(main_mod_button_area.Mai
 
     react.onStep(function()
         syncOpen()
-        local c = getCore()
-        if c and c.update then
-            c.update()
-        end
     end)
 
     if isMapEditorRef:get() then
@@ -686,14 +595,14 @@ local UfoSummonerHudPlugin = react.RegisterPluginRecipe(main_mod_button_area.Mai
     local btn = builtin.ToggleButton{
         meta = {
             class = "primary",
-            tooltip = _tr("TOOLTIP_OPEN_UFO", "幽浮召喚器\n手動召喚神秘外星飛碟與鏡頭追蹤"),
+            tooltip = _tr("TOOLTIP_OPEN_UFO", "UFO Summoner\nSummon UFO and track abduction events"),
         },
         content = builtin.BoxLayout{
             orientation = builtin.type.Orientation.Horizontal,
             children = {
                 builtin.TextView{
                     meta = { class = "font-scale-body" },
-                    text = _tr("UFO_SUMMONER", "幽浮"),
+                    text = _tr("TOOLBAR_BTN_UFO", "UFO"),
                 },
             },
         },
@@ -713,12 +622,6 @@ local exports = {
     openWindow = openWindow,
     closeWindow = closeWindow,
     toggleWindow = toggleWindow,
-    update = function(userParams, state, dt) end,
-    guiUpdate = function(userParams, stateRO, guiState) end,
-    handleEvent = function(userParams, state, src, id, name, param) end,
-    guiHandleEvent = function(userParams, stateRO, guiState, src, id, name, param) end,
-    save = function(state) return {} end,
-    load = function(state, loadedData) end,
 }
 
 function data()

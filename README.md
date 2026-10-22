@@ -1,6 +1,6 @@
 # Transport Fever 3 Mods
 
-A collection of quality-of-life (QoL) and achievement assistant mods for **Transport Fever 3** developed by [ALiangLiang](https://github.com/ALiangLiang). All mods are built on the game's native React UI framework, integrate directly into the top-left corner of the game screen, support full multi-language localization (English, Traditional Chinese, Simplified Chinese), and adhere strictly to zero emoji usage for clean font rendering.
+A collection of quality-of-life (QoL) and achievement assistant mods for **Transport Fever 3** developed by [ALiangLiang](https://github.com/ALiangLiang). All mods are built on the game's native React UI framework, integrate directly into the top-left corner of the game screen, support multi-language localization (13 languages), and adhere strictly to zero emoji usage for clean font rendering.
 
 ---
 
@@ -38,7 +38,7 @@ C:\Program Files (x86)\Steam\userdata\<YourSteamID>\3493540\local\staging_area\
 2. **Native React UI Architecture**:
    - Integrates seamlessly with official UI extensions (`MainModButtonAreaExtension`, `react.RegisterWrapperRecipe`, `builtin.Window`) for native look, feel, and performance.
 3. **Multi-Language Localization**:
-   - Full localization support for English, Traditional Chinese (`zh_TW`), and Simplified Chinese (`zh_CN`).
+   - Full localization support for all 13 official languages: English, Deutsch, Español, Français, Italiano, Nederlands, Polski, Português, Русский, 日本語, 简体中文, 繁體中文, and 한국어.
 
 ---
 

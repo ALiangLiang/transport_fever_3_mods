@@ -60,6 +60,6 @@ ufo_summoner/
 │   └── ufo_summoner.gs.lua           # GameScript engine dispatcher
 ├── _content.json                     # Resource and file index
 ├── mod.json                          # Core mod settings
-├── strings.json                      # Multi-language translations (en, zh_TW, zh_CN)
+├── strings.json                      # Multi-language translations (13 languages supported)
 └── readme.md                         # Mod documentation
 ```

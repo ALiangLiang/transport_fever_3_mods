@@ -52,7 +52,7 @@ connoisseur_tracker/
 │   └── modinfo.json                       # Workshop/ModHub metadata and descriptions
 ├── _content.json                          # Asset and script index
 ├── mod.json                               # Core mod configuration
-├── strings.json                           # Multi-language translations (en, zh_TW, zh_CN)
+├── strings.json                           # Multi-language translations (13 languages supported)
 ├── readme.md                              # Mod documentation
 └── content/
     ├── connoisseur_tracker_toolbar.res.lua # React toolbar HUD button definition

@@ -175,8 +175,8 @@ local function openWindow()
         pcall(function()
             wa.addSingletonWindow(UfoSummonerWindow, {
                 onClose = closeWindow,
-                initialX = 220,
-                initialY = 140,
+                initialX = 0.5,
+                initialY = 0.5,
             })
             wa.moveSingletonWindowToFront(UfoSummonerWindow)
         end)
@@ -553,8 +553,8 @@ UfoSummonerWindow = react.RegisterWrapperRecipe("UfoSummonerWindow", builtin.Win
         closable = true,
         movable = true,
         onClose = params.onClose,
-        initialX = params.initialX or 180,
-        initialY = params.initialY or 120,
+        initialX = params.initialX or 0.5,
+        initialY = params.initialY or 0.5,
         content = UfoSummonerContent(),
     }
     return builtin.Window(winParams)

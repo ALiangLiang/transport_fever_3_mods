@@ -174,8 +174,8 @@ local function openWindow()
         pcall(function()
             wa.addSingletonWindow(AnimalRadarWindow, {
                 onClose = closeWindow,
-                initialX = 180,
-                initialY = 120,
+                initialX = 0.5,
+                initialY = 0.5,
             })
             wa.moveSingletonWindowToFront(AnimalRadarWindow)
         end)
@@ -410,8 +410,8 @@ AnimalRadarWindow = react.RegisterWrapperRecipe("AnimalRadarWindow", builtin.Win
         closable = true,
         movable = true,
         onClose = params.onClose,
-        initialX = params.initialX or 180,
-        initialY = params.initialY or 120,
+        initialX = params.initialX or 0.5,
+        initialY = params.initialY or 0.5,
         content = AnimalRadarContent(),
     }
     return builtin.Window(winParams)

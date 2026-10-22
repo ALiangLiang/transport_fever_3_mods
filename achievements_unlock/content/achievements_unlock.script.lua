@@ -84,8 +84,8 @@ local function openConfirmWindow(target)
         wa.removeAllWindows(AchievementConfirmWindow)
         wa.addSingletonWindow(AchievementConfirmWindow, {
             onClose = closeConfirmWindow,
-            initialX = 340,
-            initialY = 240,
+            initialX = 0.5,
+            initialY = 0.5,
         })
         wa.moveSingletonWindowToFront(AchievementConfirmWindow)
     end)
@@ -115,8 +115,8 @@ local function openWindow()
         pcall(function()
             wa.addSingletonWindow(AchievementUnlockerWindow, {
                 onClose = closeWindow,
-                initialX = 200,
-                initialY = 120,
+                initialX = 0.5,
+                initialY = 0.5,
             })
             wa.moveSingletonWindowToFront(AchievementUnlockerWindow)
         end)
@@ -599,8 +599,8 @@ AchievementConfirmWindow = react.RegisterWrapperRecipe("AchievementConfirmWindow
         closable = true,
         movable = true,
         onClose = closeConfirmWindow,
-        initialX = params.initialX or 280,
-        initialY = params.initialY or 220,
+        initialX = params.initialX or 0.5,
+        initialY = params.initialY or 0.5,
         content = AchievementConfirmContent(),
     }
     return builtin.Window(winParams)
@@ -614,8 +614,8 @@ AchievementUnlockerWindow = react.RegisterWrapperRecipe("AchievementUnlockerWind
         closable = true,
         movable = true,
         onClose = params.onClose,
-        initialX = params.initialX or 180,
-        initialY = params.initialY or 120,
+        initialX = params.initialX or 0.5,
+        initialY = params.initialY or 0.5,
         content = AchievementUnlockerContent(),
     }
     return builtin.Window(winParams)

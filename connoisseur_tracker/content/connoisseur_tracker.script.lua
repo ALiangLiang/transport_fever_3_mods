@@ -322,8 +322,8 @@ local function openWindow()
         pcall(function()
             wa.addSingletonWindow(ConnoisseurTrackerWindow, {
                 onClose = closeWindow,
-                initialX = 180,
-                initialY = 120,
+                initialX = 0.5,
+                initialY = 0.5,
             })
             wa.moveSingletonWindowToFront(ConnoisseurTrackerWindow)
         end)
@@ -753,8 +753,8 @@ ConnoisseurTrackerWindow = react.RegisterWrapperRecipe("ConnoisseurTrackerWindow
         closable = true,
         movable = true,
         onClose = params.onClose,
-        initialX = params.initialX or 180,
-        initialY = params.initialY or 120,
+        initialX = params.initialX or 0.5,
+        initialY = params.initialY or 0.5,
         content = ConnoisseurTrackerContent(),
     }
     return builtin.Window(winParams)

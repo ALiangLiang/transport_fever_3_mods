@@ -1,0 +1,9 @@
+{
+  "archives": null,
+  "files": [
+    "achievement_unlocker_toolbar.res.lua",
+    "achievement_unlocker.script.lua",
+    "achievement_unlocker.lua",
+    "ui_util.lua"
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "name": "Achievement Unlocker",
+  "summary": "In-game achievement list with one-click instant unlock buttons",
+  "description": "An in-game manager and one-click unlocker for all official achievements.\n\nFeatures:\n1. Dedicated Toolbar Button: Convenient access button on the main toolbar to open the achievement window anytime.\n2. Complete Achievement List: Real-time overview of all achievements with icons, names, descriptions, and current unlock status.\n3. One-Click Unlock: Instantly unlock any individual achievement with a single click.\n4. Unlock All: Unlock all remaining achievements in one go.\n5. Status Filters: Easily filter achievements by All, Locked, or Unlocked.",
+  "localization": {
+    "zh": {
+      "name": "成就解鎖器",
+      "summary": "遊戲內成就列表視窗，支援一鍵直接解鎖任意或全部成就",
+      "description": "專為《Transport Fever 2》打造的成就管理與一鍵解鎖工具。\n\n功能特色：\n1. 專屬工具列按鈕：位於畫面主工具列，可隨時點擊開啟成就視窗。\n2. 完整成就列表：即時顯示所有官方成就的圖示、名稱、說明與當前解鎖狀態。\n3. 一鍵直接解鎖：每個未完成的成就旁均有一鍵解鎖按鈕，按下即可直接達成成就。\n4. 全部解鎖功能：提供一鍵解鎖全部剩餘成就功能。\n5. 狀態過濾篩選：支援依全部、未解鎖、已解鎖進行分類篩選。"
+    }
+  },
+  "authors": [
+    {
+      "name": "ALiangLiang",
+      "role": "CREATOR"
+    }
+  ],
+  "tags": [
+    "Script Mod",
+    "Misc"
+  ],
+  "url": ""
+}

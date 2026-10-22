@@ -1,0 +1,12 @@
+{
+  "modId": "aliangliang_achievement_unlocker",
+  "revision": 1,
+  "severityAdd": "None",
+  "severityRemove": "None",
+  "visible": true,
+  "cosmetic": true,
+  "preRunScript": { "fileName": "" },
+  "runScript": { "fileName": "" },
+  "postRunScript": { "fileName": "" },
+  "params": []
+}

@@ -2,7 +2,7 @@ function data()
 	return {
 		type = "react-plugin ::MainModButtonAreaExtension",
 		data = {
-			filePath = "aliangliang_achievement_unlocker::/achievement_unlocker.script@AchievementUnlockerHudPlugin",
+			filePath = "aliangliang_achievements_unlock::/achievements_unlock.script@AchievementsUnlockHudPlugin",
 			order = 13,
 		}
 	}

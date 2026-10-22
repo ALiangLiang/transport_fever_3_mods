@@ -95,36 +95,34 @@ function M.createScrollArea(rows, height)
     }
 end
 
+-- Create a StyleSheet with textAutoWrap enabled for multi-line text wrapping
+function M.makeWrappingTextStyle(width)
+    local style = nil
+    if styleutil and styleutil.makeStyle then
+        pcall(function()
+            style = styleutil.makeStyle{ size = { width or 620, -1 } }
+            style.textAutoWrap = true
+        end)
+    end
+    return style
+end
+
 -- Root window layout box
 function M.createWindowBox(children, width, height)
     local boxMeta = nil
     if styleutil and styleutil.makeStyle then
         pcall(function()
-            local s = styleutil.makeStyle{ size = { -1, height or 540 } }
+            local s = styleutil.makeStyle{ size = { width or 820, height or -1 } }
             if s and api and api.type and api.type.Vec4f and api.type.Vec4f.new then
                 pcall(function() s.padding = api.type.Vec4f.new(12, 16, 12, 16) end)
             end
             boxMeta = { styleSheet = s }
         end)
     end
-    local allChildren = {
-        builtin.Component{
-            meta = (function()
-                if styleutil and styleutil.makeStyle then
-                    local ok, s = pcall(styleutil.makeStyle, { size = { width or 820, 0 } })
-                    if ok then return { styleSheet = s } end
-                end
-                return nil
-            end)(),
-        },
-    }
-    for _, ch in ipairs(children) do
-        table.insert(allChildren, ch)
-    end
     return builtin.BoxLayout{
         meta = boxMeta,
         orientation = builtin.type.Orientation.Vertical,
-        children = allChildren,
+        children = children,
     }
 end
 

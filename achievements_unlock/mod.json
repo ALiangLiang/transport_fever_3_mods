@@ -1,5 +1,5 @@
 {
-  "modId": "aliangliang_achievement_unlocker",
+  "modId": "aliangliang_achievements_unlock",
   "revision": 1,
   "severityAdd": "None",
   "severityRemove": "None",
@@ -8,5 +8,6 @@
   "preRunScript": { "fileName": "" },
   "runScript": { "fileName": "" },
   "postRunScript": { "fileName": "" },
-  "params": []
+  "params": [],
+  "forceActivateAchievements": true
 }

@@ -10,12 +10,12 @@ local game_react_globals = ug_require and ug_require("::/gui/main/game_react_glo
 
 local ui = nil
 pcall(function()
-    ui = ug_require and ug_require("aliangliang_achievement_unlocker::/ui_util.lua") or require("ui_util.lua")
+    ui = ug_require and ug_require("aliangliang_achievements_unlock::/ui_util.lua") or require("ui_util.lua")
 end)
 
 local core = nil
 pcall(function()
-    core = ug_require and ug_require("aliangliang_achievement_unlocker::/achievement_unlocker.lua") or require("achievement_unlocker.lua")
+    core = ug_require and ug_require("aliangliang_achievements_unlock::/achievements_unlock.lua") or require("achievements_unlock.lua")
 end)
 
 local styleutil = nil
@@ -52,15 +52,53 @@ end
 -- ==============================================================================
 
 local WINDOW_ID = "achievement_unlocker_window"
+local CONFIRM_WINDOW_ID = "achievement_unlocker_confirm_window"
 local isWindowOpen = false
 local AchievementUnlockerWindow = nil
+local AchievementConfirmWindow = nil
+
+local confirmTarget = nil
+local updateConfirmContent = nil
+local triggerMainWindowRefresh = nil
+local setMainWindowNotification = nil
 
 local function windowOpen()
     return isWindowOpen
 end
 
+local function closeConfirmWindow()
+    confirmTarget = nil
+    local wa = game_react_globals and game_react_globals.getDefaultWindowApi and game_react_globals.getDefaultWindowApi()
+    if wa ~= nil and AchievementConfirmWindow ~= nil then
+        pcall(function()
+            wa.removeAllWindows(AchievementConfirmWindow)
+        end)
+    end
+end
+
+local function openConfirmWindow(target)
+    confirmTarget = target
+    local wa = game_react_globals and game_react_globals.getDefaultWindowApi and game_react_globals.getDefaultWindowApi()
+    if wa == nil or AchievementConfirmWindow == nil then return end
+    pcall(function()
+        wa.removeAllWindows(AchievementConfirmWindow)
+        wa.addSingletonWindow(AchievementConfirmWindow, {
+            onClose = closeConfirmWindow,
+            initialX = 340,
+            initialY = 240,
+        })
+        wa.moveSingletonWindowToFront(AchievementConfirmWindow)
+    end)
+    if updateConfirmContent then
+        pcall(function()
+            updateConfirmContent(target)
+        end)
+    end
+end
+
 local function closeWindow()
     isWindowOpen = false
+    closeConfirmWindow()
     local wa = game_react_globals and game_react_globals.getDefaultWindowApi and game_react_globals.getDefaultWindowApi()
     if wa ~= nil and AchievementUnlockerWindow ~= nil then
         pcall(function()
@@ -101,6 +139,14 @@ local AchievementUnlockerContent = react.RegisterRecipe("AchievementUnlockerCont
     local refreshTick = react.useState(0)
     local filterState = react.useState("ALL") -- "ALL", "LOCKED", "UNLOCKED"
     local notificationState = react.useState("")
+
+    triggerMainWindowRefresh = function()
+        refreshTick:transform(function(v) return v + 1 end)
+    end
+
+    setMainWindowNotification = function(text)
+        notificationState:set(text or "")
+    end
 
     -- Fetch current list of achievements
     local allAchievements = {}
@@ -168,10 +214,9 @@ local AchievementUnlockerContent = react.RegisterRecipe("AchievementUnlockerCont
                     text = _tr("BTN_UNLOCK_ALL", "Unlock All"),
                 },
                 onClick = function()
-                    if core and core.unlockAll then
-                        local count = core.unlockAll(allAchievements)
-                        notificationState:set(string.format(_tr("UNLOCK_ALL_SUCCESS", "Successfully unlocked %d achievements!"), count))
-                        refreshTick:transform(function(v) return v + 1 end)
+                    local remaining = totalCount - unlockedCount
+                    if remaining > 0 then
+                        openConfirmWindow({ type = "ALL", count = remaining })
                     end
                 end,
             },
@@ -266,19 +311,9 @@ local AchievementUnlockerContent = react.RegisterRecipe("AchievementUnlockerCont
         local textComp = builtin.BoxLayout{
             orientation = builtin.type.Orientation.Vertical,
             children = {
-                builtin.BoxLayout{
-                    orientation = builtin.type.Orientation.Horizontal,
-                    children = {
-                        builtin.TextView{
-                            meta = { class = "font-scale-body" },
-                            text = ach.name or ach.id,
-                        },
-                        makeHSpacer(8),
-                        builtin.TextView{
-                            meta = { class = "font-scale-caption" },
-                            text = string.format("(%s)", ach.id),
-                        },
-                    },
+                builtin.TextView{
+                    meta = { class = "font-scale-body" },
+                    text = ach.name or ach.id,
                 },
                 makeVSpacer(2),
                 builtin.TextView{
@@ -286,7 +321,7 @@ local AchievementUnlockerContent = react.RegisterRecipe("AchievementUnlockerCont
                         class = "font-scale-caption",
                         styleSheet = (function()
                             if styleutil and styleutil.makeStyle then
-                                local ok, s = pcall(styleutil.makeStyle, { size = { 480, -1 } })
+                                local ok, s = pcall(styleutil.makeStyle, { size = { 520, -1 } })
                                 if ok then return s end
                             end
                             return nil
@@ -319,11 +354,7 @@ local AchievementUnlockerContent = react.RegisterRecipe("AchievementUnlockerCont
                     text = _tr("BTN_UNLOCK", "Unlock"),
                 },
                 onClick = function()
-                    if core and core.unlock then
-                        core.unlock(ach.id)
-                        notificationState:set(string.format(_tr("UNLOCK_SUCCESS", "Successfully unlocked: %s"), ach.name or ach.id))
-                        refreshTick:transform(function(v) return v + 1 end)
-                    end
+                    openConfirmWindow({ type = "SINGLE", ach = ach })
                 end,
             }
         end
@@ -422,11 +453,164 @@ local AchievementUnlockerContent = react.RegisterRecipe("AchievementUnlockerCont
     }
 end)
 
+-- ==============================================================================
+-- Confirmation Dialog Content & Window Recipe
+-- ==============================================================================
+
+local AchievementConfirmContent = react.RegisterRecipe("AchievementConfirmContent", function()
+    local targetState = react.useState(confirmTarget)
+    updateConfirmContent = function(newTarget)
+        targetState:set(newTarget)
+    end
+
+    local target = targetState:old() or confirmTarget
+    if not target then
+        return builtin.BoxLayout{
+            orientation = builtin.type.Orientation.Vertical,
+            children = { makeVSpacer(10) },
+        }
+    end
+
+    local introText = _tr("CONFIRM_INTRO", "如果你因要完成此遊戲的所有成就影響你的生活，而身心俱疲，請按下解鎖。")
+    local emphasisText = _tr("CONFIRM_EMPHASIS", "若不是，而你仍享受這個遊戲，請按下取消並取消訂閱此mod。")
+    local warningText = _tr("CONFIRM_WARNING", "此操作無法復原，你確定要立即解鎖成就嗎？")
+
+    local bodyChildren = {
+        makeVSpacer(14),
+        -- Paragraph 1: Intro
+        builtin.BoxLayout{
+            meta = { class = "horizontal-spacer" },
+            orientation = builtin.type.Orientation.Horizontal,
+            children = {
+                makeHSpacer(20),
+                builtin.TextView{
+                    meta = { class = "font-scale-body" },
+                    text = introText,
+                },
+                makeExpandingSpacer(),
+                makeHSpacer(20),
+            },
+        },
+        makeVSpacer(10),
+        -- Paragraph 2: Emphasized Bold
+        builtin.BoxLayout{
+            meta = { class = "horizontal-spacer" },
+            orientation = builtin.type.Orientation.Horizontal,
+            children = {
+                makeHSpacer(20),
+                builtin.TextView{
+                    meta = { class = "font-scale-title-4" },
+                    text = emphasisText,
+                },
+                makeExpandingSpacer(),
+                makeHSpacer(20),
+            },
+        },
+        makeVSpacer(10),
+        -- Paragraph 3: Warning
+        builtin.BoxLayout{
+            meta = { class = "horizontal-spacer" },
+            orientation = builtin.type.Orientation.Horizontal,
+            children = {
+                makeHSpacer(20),
+                builtin.TextView{
+                    meta = { class = "font-scale-body" },
+                    text = warningText,
+                },
+                makeExpandingSpacer(),
+                makeHSpacer(20),
+            },
+        },
+        makeVSpacer(18),
+        -- Buttons row
+        builtin.BoxLayout{
+            meta = { class = "horizontal-spacer" },
+            orientation = builtin.type.Orientation.Horizontal,
+            children = {
+                makeHSpacer(20),
+                makeExpandingSpacer(),
+                builtin.Button{
+                    meta = {
+                        class = "secondary",
+                        tooltip = _tr("BTN_CANCEL", "Cancel"),
+                    },
+                    content = builtin.TextView{
+                        meta = { class = "font-scale-body" },
+                        text = _tr("BTN_CANCEL", "Cancel"),
+                    },
+                    onClick = function()
+                        closeConfirmWindow()
+                    end,
+                },
+                makeHSpacer(12),
+                builtin.Button{
+                    meta = {
+                        class = "primary",
+                        tooltip = _tr("BTN_CONFIRM_UNLOCK", "Unlock"),
+                    },
+                    content = builtin.TextView{
+                        meta = { class = "font-scale-body" },
+                        text = _tr("BTN_CONFIRM_UNLOCK", "Unlock"),
+                    },
+                    onClick = function()
+                        if target.type == "SINGLE" and target.ach then
+                            if core and core.unlock then
+                                core.unlock(target.ach.id)
+                                if setMainWindowNotification then
+                                    setMainWindowNotification(string.format(_tr("UNLOCK_SUCCESS", "Successfully unlocked: %s"), target.ach.name or target.ach.id))
+                                end
+                            end
+                        elseif target.type == "ALL" then
+                            if core and core.unlockAll then
+                                local allList = (core.getAchievements and core.getAchievements()) or {}
+                                local count = core.unlockAll(allList)
+                                if setMainWindowNotification then
+                                    setMainWindowNotification(string.format(_tr("UNLOCK_ALL_SUCCESS", "Successfully unlocked %d achievements!"), count))
+                                end
+                            end
+                        end
+                        closeConfirmWindow()
+                        if triggerMainWindowRefresh then
+                            triggerMainWindowRefresh()
+                        end
+                    end,
+                },
+                makeHSpacer(20),
+            },
+        },
+        makeVSpacer(14),
+    }
+
+    if ui and ui.createWindowBox then
+        return ui.createWindowBox(bodyChildren, 640, -1)
+    end
+
+    return builtin.BoxLayout{
+        orientation = builtin.type.Orientation.Vertical,
+        children = bodyChildren,
+    }
+end)
+
+-- Confirmation Dialog Window Wrapper Recipe
+AchievementConfirmWindow = react.RegisterWrapperRecipe("AchievementConfirmWindow", builtin.Window, function(params)
+    local winParams = {
+        id = CONFIRM_WINDOW_ID,
+        title = _tr("CONFIRM_TITLE", "給完美主義者"),
+        closable = true,
+        movable = true,
+        onClose = closeConfirmWindow,
+        initialX = params.initialX or 280,
+        initialY = params.initialY or 220,
+        content = AchievementConfirmContent(),
+    }
+    return builtin.Window(winParams)
+end)
+
 -- Window Wrapper Recipe
 AchievementUnlockerWindow = react.RegisterWrapperRecipe("AchievementUnlockerWindow", builtin.Window, function(params)
     local winParams = {
         id = WINDOW_ID,
-        title = _tr("ACHIEVEMENT_UNLOCKER", "Achievement Unlocker"),
+        title = _tr("ACHIEVEMENT_UNLOCKER", "Achievements Unlock"),
         closable = true,
         movable = true,
         onClose = params.onClose,
@@ -448,7 +632,7 @@ local function pluginRoot(child)
     }
 end
 
-local AchievementUnlockerHudPlugin = react.RegisterPluginRecipe(main_mod_button_area.MainModButtonAreaExtension, "AchievementUnlockerHudPlugin", function()
+local AchievementsUnlockHudPlugin = react.RegisterPluginRecipe(main_mod_button_area.MainModButtonAreaExtension, "AchievementsUnlockHudPlugin", function()
     local isMapEditorRef = react.useRefLazy(function()
         if api and api.gui and api.gui.game and api.gui.game.isMapEditor then
             return api.gui.game.isMapEditor()
@@ -476,7 +660,7 @@ local AchievementUnlockerHudPlugin = react.RegisterPluginRecipe(main_mod_button_
     local btn = builtin.ToggleButton{
         meta = {
             class = "primary",
-            tooltip = _tr("TOOLTIP_OPEN_ACHIEVEMENTS", "Achievement Unlocker\nView all achievements and unlock with one click"),
+            tooltip = _tr("TOOLTIP_OPEN_ACHIEVEMENTS", "Achievements Unlock\nView all achievements and unlock with one click"),
         },
         content = builtin.BoxLayout{
             orientation = builtin.type.Orientation.Horizontal,
@@ -498,11 +682,14 @@ local AchievementUnlockerHudPlugin = react.RegisterPluginRecipe(main_mod_button_
 end)
 
 local exports = {
-    AchievementUnlockerHudPlugin = AchievementUnlockerHudPlugin,
-    ToolbarButtonPlugin = AchievementUnlockerHudPlugin,
+    AchievementsUnlockHudPlugin = AchievementsUnlockHudPlugin,
+    AchievementUnlockerHudPlugin = AchievementsUnlockHudPlugin,
+    ToolbarButtonPlugin = AchievementsUnlockHudPlugin,
     toggleWindow = toggleWindow,
     openWindow = openWindow,
     closeWindow = closeWindow,
+    openConfirmWindow = openConfirmWindow,
+    closeConfirmWindow = closeConfirmWindow,
 }
 
 function data()

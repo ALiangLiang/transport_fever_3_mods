@@ -1,49 +1,61 @@
-# Connoisseur Tracker (鑑賞家追蹤器)
+# Connoisseur Tracker
 
-> **專為 Transport Fever 3 (TF3) 打造的「鑑賞家」（Connoisseur）全運具成就追蹤與載具商店標記模組**  
+> **Vehicle collection tracker and depot store badge integration for Transport Fever 3**  
 > **Mod ID**: `aliangliang_connoisseur_tracker`  
-> **作者**: ALiangLiang  
-> **版本**: 1.0.0 (Revision 1)
+> **Author**: ALiangLiang  
+> **Version**: 1.0.0 (Revision 1)
 
 ---
 
-## 模組功能簡介
+## Overview
 
-在《Transport Fever 3》中，官方成就「鑑賞家」（Connoisseur / `ACH_ALL_VEHICLES`）要求玩家在自由遊戲模式中使用過所有官方運具至少一次（可跨存檔合計）。然而原版遊戲中共有 306 種運具，玩家難以得知哪些運具尚未被使用過。
+In Transport Fever 3, the official achievement **"Connoisseur"** (`ACH_ALL_VEHICLES`) requires players to use all official vehicles at least once in Free Game mode across games. With over 300 vehicles spanning multiple eras, keeping track of unused vehicles is challenging.
 
-本模組提供完整的成就進度追蹤與商店即時標記：
-1. **載具商店即時標記**：在任何機廠、車庫或造船廠購買車輛時，尚未被使用過的原版運具會在名稱旁自動標註 **「[未使用過]」**，買車時一目了然。
-2. **專屬快速按鈕**：遊戲畫面左上角新增「鑑賞家」按鈕，隨時開啟成就追蹤視窗。
-3. **全域即時統計數據**：即時讀取全域統計（例如：已鑑賞 90 / 306 種，29.4%），精確掌握完成度。
-4. **類別分頁與篩選**：按鐵路、公路、路面電車、水運、航空分類分頁，並支援「過濾未使用過」切換。
-5. **解鎖年代提示**：清楚顯示各車輛的推出年代（如 1850 年 - 1925 年），避免因年代演進而錯過已絕版的早期經典運具。
+Connoisseur Tracker solves this by providing real-time progress tracking, availability era hints, and automatically tagging uncollected vehicles directly inside depot vehicle purchase menus.
 
 ---
 
-## 遊戲內操作方式
+## Features
 
-1. **開啟進度視窗**：
-   * 點擊遊戲畫面左上角的 **「鑑賞家」** 按鈕即可開啟視窗。
-   * 可切換「鐵路」、「公路」、「電車」、「水運」、「航空」分頁，或點擊「過濾未使用過」篩選。
-2. **在車庫/機廠購買運具**：
-   * 打開任何車庫或機廠的「購買載具」視窗。
-   * 尚未使用的運具名稱旁會自動標記 **「[未使用過]」**。
-   * 將其購置並指派至營運中的路線，讓該車輛在路線站點停靠一次，即可完成該運具的使用記錄！
+1. **In-Store Vehicle Badges**:
+   - In all train depots, road depots, tram depots, docks, and hangars, any official vehicle you have not yet used will automatically show an **`[Unused]`** badge next to its name.
+2. **Top-Left Quick Access Button**:
+   - Click the **"Connoisseur"** button in the top-left corner of the game screen to open the collection tracker window anytime.
+3. **Real-Time Global Statistics**:
+   - Live query of official achievement stats (e.g. `Collected 90 / 306 vehicles (29.4%)`), giving you exact progress toward completion.
+4. **Category Tabs & Filters**:
+   - Organized into Rail, Road, Tram, Water, and Aviation tabs, with a dedicated "Unused Only" toggle to filter out already collected vehicles.
+5. **Availability Era Information**:
+   - Displays introduction and retirement years for each vehicle (e.g. `1850 - 1925`), preventing you from missing time-limited historical models.
+6. **Strictly Zero Emojis**:
+   - Clean, native typography designed specifically to avoid missing glyph square boxes `[]`.
 
 ---
 
-## 檔案目錄架構
+## How to Use
+
+1. **Review Progress**:
+   - Click the **"Connoisseur"** button in the top-left corner of the game screen to inspect which vehicles remain uncollected.
+2. **Purchase Vehicles**:
+   - Open any depot or station vehicle store.
+   - Look for models labeled with the **`[Unused]`** badge.
+   - Buy the vehicle and assign it to an active line with at least one stop. Once the vehicle stops at a station, it is permanently marked as collected!
+
+---
+
+## Directory Structure
 
 ```text
 connoisseur_tracker/
 ├── _metadata/
-│   ├── 0.png                              # 模組預覽封面圖
-│   └── modinfo.json                       # 遊戲內 Mod 管理器元資料與多語系描述
-├── _content.json                          # 資源索引列表
-├── strings.json                           # 多語系文本 (en, zh_TW, zh_CN)
-├── mod.json                               # 模組核心設定
+│   ├── 0.png                              # Mod preview cover image
+│   └── modinfo.json                       # Workshop/ModHub metadata and descriptions
+├── _content.json                          # Asset and script index
+├── mod.json                               # Core mod configuration
+├── strings.json                           # Multi-language translations (en, zh_TW, zh_CN)
+├── readme.md                              # Mod documentation
 └── content/
-    ├── connoisseur_tracker_toolbar.res.lua # 工具列 HUD 按鈕註冊
-    ├── connoisseur_tracker.script.lua      # 視窗 UI Recipe 與載具商店 Hook
-    └── connoisseur_tracker.lua             # 核心成就數據統計與模型掃描
+    ├── connoisseur_tracker_toolbar.res.lua # React toolbar HUD button definition
+    ├── connoisseur_tracker.script.lua      # GUI recipe, window wrapper, and store hook
+    └── connoisseur_tracker.lua             # Core achievement statistics and model scanning
 ```

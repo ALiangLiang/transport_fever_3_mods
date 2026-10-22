@@ -1,50 +1,62 @@
 # Animal Radar
 
-> **專為 Transport Fever 3 (TF3) 打造的全地圖動物偵測雷達與鏡頭聚焦系統**  
+> **Full-map wildlife detection radar and smooth camera tracking system for Transport Fever 3**  
 > **Mod ID**: `aliangliang_animal_radar`  
-> **作者**: ALiangLiang  
-> **版本**: 1.0.0 (Revision 1)
+> **Author**: ALiangLiang  
+> **Version**: 1.0.0 (Revision 1)
 
 ---
 
-##  模組功能簡介
+## Overview
 
-在《Transport Fever 3》地圖中棲息著各種動物（如鹿、棕熊、狐狸、狼、美洲獅、灰鶴、老鷹、海鷗、鮭魚魚群、七彩神仙魚魚群等）。本模組提供專屬的「動物雷達視窗」：
-1. **專屬快速按鈕**：點擊遊戲畫面左上角的「動物雷達」按鈕即可開啟或關閉雷達視窗。
-2. **物種分頁標籤**：依據地圖上實際存在的動物物種動態生成分頁標籤（例如「全部」、「鹿」、「棕熊」、「七彩神仙魚魚群」等），點擊即可快速篩選指定物種。
-3. **一鍵鏡頭跳轉與追蹤**：點擊動物項目右側的「觀察聚焦」按鈕，鏡頭會立即平滑移動至該動物身旁，並持續跟隨追蹤！
-4. **成就得力助手**：輕鬆掌控全圖動物分佈與物種清單，對達成「動物愛好者」成就非常有幫助。
+Designed specifically for the official **"Animal Lover"** achievement, Animal Radar adds an in-game radar window that scans all wildlife across the map and organizes them into dynamic tabs grouped by species.
 
 ---
 
-##  遊戲內操作方式
+## Features
 
-1. **開啟雷達視窗**：
-   * 點擊遊戲畫面左上角（資料圖層旁邊的模組按鈕區域）的 **「動物雷達」** 按鈕即可彈出雷達視窗；再次點擊即可關閉。
-2. **物種篩選**：
-   * 點擊上方的物種分頁標籤（如「全部」、「鹿」、「灰鶴」等），快速過濾列表中只顯示該物種。
-3. **鏡頭跳轉**：
-   * 點擊任意動物右側的 **「觀察聚焦」**，遊戲鏡頭將立即平滑移動至該動物身旁並跟隨追蹤。
-4. **切換鏡頭模式**：
-   * 視窗頂部按鈕可切換 **「鏡頭模式: 跟隨」**（鏡頭隨動物移動）或 **「鏡頭模式: 聚焦」**（僅將視野移至該位置）。
+1. **Top-Left Quick Access Button**:
+   - Click the "Animal Radar" button in the top-left corner of the game screen to toggle the radar window.
+2. **Dynamic Species Tab Navigation**:
+   - Automatically generates tabs based on animals actively roaming the current map (e.g. Deer, Brown Bear, Fox, Wolf, Cougar, Crane, Eagle, Seagull, Fish Schools, etc.), displaying entity counts and individual lists.
+3. **Instant Camera Jump & Smooth Tracking**:
+   - Click "Focus" next to any detected animal to smoothly glide the game camera directly to its position.
+4. **Dual Camera Modes**:
+   - Switch between **"Follow"** mode (camera dynamically follows the moving animal) and **"Focus"** mode (camera repositions once to the animal's location).
+5. **Achievement Helper**:
+   - Effortlessly track down and observe every wild animal species on the map to complete the "Animal Lover" achievement.
+6. **Strictly Zero Emojis**:
+   - Built with plain text formatting and native fonts to avoid missing glyph square boxes `[]`.
 
 ---
 
-##  檔案目錄架構
+## How to Use
+
+1. **Open the Radar**:
+   - Click the **"Animal Radar"** button in the top-left corner of the game screen.
+2. **Filter by Species**:
+   - Click any species tab at the top (e.g. "All", "Deer", "Crane") to view only entities of that type.
+3. **Observe & Follow**:
+   - Click **"Focus"** next to any entry in the list to move your camera directly to that animal.
+   - Use the toggle at the top of the window to switch between Follow and Focus camera behaviors.
+
+---
+
+## Directory Structure
 
 ```text
-aliangliang_animal_radar/ (或 staging_area 資料夾)
+animal_radar/
 ├── _metadata/
-│   ├── 0.png                         # 模組預覽封面圖
-│   └── modinfo.json                  # 遊戲內 Mod 管理器元資料與多語系描述
+│   ├── 0.png                         # Mod preview cover image
+│   └── modinfo.json                  # In-game Mod Manager metadata and descriptions
 ├── content/
-│   ├── animal_finder_toolbar.res.lua # TF3 原生 React UI 資源定義 (註冊 MainModButtonAreaExtension)
-│   ├── animal_finder.script.lua      # HUD 工具列 Toggle 按鈕與雷達 Window Recipe
-│   ├── animal_finder_sim.script.lua  # 後台模擬執行緒無 UI 安全腳本
-│   ├── animal_finder.lua             # 核心雷達掃描演算法、物種辨識與攝影機跳轉
-│   └── animal_finder.gs.lua          # GameScript 引擎轉發
-├── _content.json                     # 模組載入檔案清單
-├── mod.json                          # 模組設定與可配置參數 (支援 i18n)
-├── strings.json                      # 英文、繁體中文與簡體中文在地化字串
-└── README.md                         # 模組說明手冊
+│   ├── animal_finder_toolbar.res.lua # React UI resource registering MainModButtonAreaExtension
+│   ├── animal_finder.script.lua      # Toolbar toggle button and radar window recipe
+│   ├── animal_finder_sim.script.lua  # Background simulation thread script
+│   ├── animal_finder.lua             # Core radar scanning algorithms and camera controller
+│   └── animal_finder.gs.lua          # GameScript engine dispatcher
+├── _content.json                     # Resource and file index
+├── mod.json                          # Core mod settings
+├── strings.json                      # Multi-language translations (en, zh_TW, zh_CN)
+└── readme.md                         # Mod documentation
 ```

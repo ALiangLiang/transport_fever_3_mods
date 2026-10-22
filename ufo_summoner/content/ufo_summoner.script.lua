@@ -213,10 +213,11 @@ local UfoSummonerContent = react.RegisterRecipe("UfoSummonerContent", function()
             refreshTick:transform(function(v) return v + 1 end)
         end
 
+        -- Focus newly spawned UFO directly once entity is created
         if pendingFocusRef:get() then
-            if now - pendingFocusStartTime:get() > 8.0 then
+            if now - pendingFocusStartTime:get() > 6.0 then
                 pendingFocusRef:set(false)
-            elseif now - lastPendingFocusCheck:get() >= 0.3 then
+            elseif now - lastPendingFocusCheck:get() >= 0.2 then
                 lastPendingFocusCheck:set(now)
                 if c and c.getActiveUfos then
                     local currentUfos = c.getActiveUfos() or {}
@@ -268,11 +269,11 @@ local UfoSummonerContent = react.RegisterRecipe("UfoSummonerContent", function()
         -- NOTE: Pull camera strictly to the UFO in the air, NOT pasture or cow.
 
         if not hasFarms then
-            local warnMsg = _tr("NO_COW_FARMS_WARNING", "⚠️ Warning: No livestock farm found on the map! Official UFO requires cattle as target. If no UFO appears, please build a Livestock Farm first.")
+            local warnMsg = _tr("NO_COW_FARMS_WARNING", "[Warning] No livestock farm found on the map! Official UFO requires cattle as target. If no UFO appears, please build a Livestock Farm first.")
             notificationState:set(warnMsg)
             sendGlobalNotification(_tr("UFO_SUMMONER", "UFO Summoner"), warnMsg, "::/game_mechanics/notifications/gui/icons/animal_despawn.tga")
         else
-            local succMsg = _tr("SUMMON_SENDING", "🛸 Summon command sent! UFO is flying in (ensure the game is not paused)...")
+            local succMsg = _tr("SUMMON_SENDING", "Summon command sent! UFO is flying in (ensure the game is not paused)...")
             notificationState:set(succMsg)
             sendGlobalNotification(_tr("UFO_SUMMONER", "UFO Summoner"), succMsg, "::/game_mechanics/notifications/gui/icons/task_complete.tga")
         end
@@ -393,12 +394,15 @@ local UfoSummonerContent = react.RegisterRecipe("UfoSummonerContent", function()
             local isRealUfo = (ufo.ufoEntity and ufo.ufoEntity > 0)
             local ufoTitle = isRealUfo
                 and string.format("%s #%d", _tr("UFO_ENTITY", "UFO"), ufo.ufoEntity)
-                or string.format("🛸 %s", _tr("UFO_SPAWNING", "UFO (Approaching...)"))
+                or _tr("UFO_SPAWNING", "UFO (Approaching...)")
 
             local actionButtons = {}
             if isRealUfo then
                 table.insert(actionButtons, builtin.Button{
-                    meta = { class = "secondary", tooltip = _tr("BTN_FOLLOW_UFO", "Follow UFO") },
+                    meta = {
+                        class = "secondary",
+                        tooltip = _tr("BTN_FOLLOW_UFO", "Follow UFO"),
+                    },
                     content = builtin.TextView{
                         meta = { class = "font-scale-body" },
                         text = _tr("BTN_FOLLOW_UFO", "Follow UFO"),

@@ -43,33 +43,6 @@ local function toEntityId(ent)
     return nil
 end
 
-local function getEntityTransf(entity)
-    local id = toEntityId(entity)
-    if not id or id <= 0 then return nil end
-    local transf = nil
-    pcall(function()
-        local mil = api.engine.getComponent(id, api.type.ComponentType.MODEL_INSTANCE_LIST)
-        if mil and mil.fatInstances and mil.fatInstances[1] then
-            transf = mil.fatInstances[1].transf
-        end
-    end)
-    return transf
-end
-
--- Move and focus camera to world position
-function M.focusPosition(pos, zoom)
-    if not pos then return end
-    pcall(function()
-        if not (api and api.gui and api.gui.camera) then return end
-        local z = zoom or 50
-        if api.gui.camera.focusPosition then
-            api.gui.camera.focusPosition(pos, z)
-        elseif api.gui.camera.lookAt then
-            api.gui.camera.lookAt(pos)
-        end
-    end)
-end
-
 local liveUfosFromGui = {}
 local pendingSummons = {}
 
@@ -87,34 +60,19 @@ end
 local function isEntityValid(entId)
     if not entId or entId < 0 then return false end
     if entId == 0 then return true end
-    if api and api.engine and api.engine.entityExists then
-        local ok, exists = pcall(api.engine.entityExists, entId)
-        if ok then return exists end
-    end
-    if api and api.engine and api.engine.getComponent then
-        local ok, comp = pcall(api.engine.getComponent, entId, api.type.ComponentType.MODEL_INSTANCE_LIST)
-        if ok and comp ~= nil then return true end
-    end
-    return true
+    return api.engine.entityExists(entId)
 end
+M.isEntityValid = isEntityValid
 
--- Focus camera on entity
+-- Directly focus/follow camera on entity
 function M.focusEntity(entity)
     local id = toEntityId(entity)
-    if not id or id <= 0 then return end
-    pcall(function()
-        if not (api and api.gui and api.gui.camera) then return end
-
-        local transf = getEntityTransf(id)
-        if transf then
-            local pos = transf:getTransl()
-            if api.gui.camera.focusPosition then
-                api.gui.camera.focusPosition(pos, 50)
-            elseif api.gui.camera.lookAt then
-                api.gui.camera.lookAt(pos)
-            end
+    if id and id > 0 then
+        local ok = pcall(api.gui.camera.followEntity, id, true)
+        if not ok then
+            api.gui.camera.focusEntity(id)
         end
-    end)
+    end
 end
 
 local cachedActiveUfos = {}
